@@ -1,0 +1,18 @@
+
+void MainWindow::showImageInfo() {
+    if (!imageLoaded) return;
+    QString info = QString("Size: %1x%2, Channels: %3").arg(currentImage.cols).arg(currentImage.rows).arg(currentImage.channels());
+    QMessageBox::information(this, "Image Info", info);
+}
+
+void MainWindow::showPixelInfo() {
+    if (!imageLoaded) return;
+    QMessageBox::information(this, "Pixel Info", "Feature not yet implemented");
+}
+
+void MainWindow::showImageStats() {
+    if (!imageLoaded) return;
+    double minVal, maxVal;
+    cv::minMaxLoc(currentImage, &minVal, &maxVal);
+    QMessageBox::information(this, "Stats", QString("Min: %1, Max: %2").arg(minVal).arg(maxVal));
+}

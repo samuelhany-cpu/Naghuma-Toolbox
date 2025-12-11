@@ -1,0 +1,137 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Libraries">
+      <UniqueIdentifier>{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libraries\Filters">
+      <UniqueIdentifier>{A8B6DE12-3456-4789-ABCD-EF0123456789}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libraries\Transforms">
+      <UniqueIdentifier>{B9C7EF23-4567-5890-BCDE-F01234567890}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libraries\Histogram">
+      <UniqueIdentifier>{C0D8F034-5678-6901-CDEF-012345678901}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MainWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ImageCanvas.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\HistogramWidget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\moc_MainWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\moc_ImageCanvas.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\moc_HistogramWidget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\filters\ImageFilters.cpp">
+      <Filter>Libraries\Filters</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\transforms\ImageTransforms.cpp">
+      <Filter>Libraries\Transforms</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\histogram\HistogramOperations.cpp">
+      <Filter>Libraries\Histogram</Filter>
+    </ClCompile>
+    <ClCompile Include="src\RightSidebarWidget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\LayerManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ImageProcessor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TransformDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MainWindowBrush.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\MainWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ImageCanvas.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HistogramWidget.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\filters\ImageFilters.h">
+      <Filter>Libraries\Filters</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\transforms\ImageTransforms.h">
+      <Filter>Libraries\Transforms</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\histogram\HistogramOperations.h">
+      <Filter>Libraries\Histogram</Filter>
+    </ClInclude>
+    <ClInclude Include="include\RightSidebarWidget.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\LayerManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ImageProcessor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\TransformDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="scripts\build_and_run.bat">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="docs\BUILD_COMPLETE.md" />
+    <None Include="scripts\clean_emojis_simple.ps1" />
+    <None Include="docs\QUICKREF.md" />
+    <None Include="docs\README.md" />
+    <None Include="scripts\remove_emojis.ps1" />
+    <None Include="scripts\run_naghuma_toolbox.bat">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="scripts\update_colors.ps1" />
+    <None Include="scripts\update_qt_project.ps1" />
+    <None Include="apply_fixes.ps1" />
+    <None Include="UPDATES_APPLIED.md" />
+    <None Include="build_with_autoch aining.ps1" />
+    <None Include="docs\MODULAR_ARCHITECTURE.md" />
+    <None Include="docs\INTEGRATION_GUIDE.md" />
+    <None Include="scripts\add_missing_functions.ps1" />
+    <None Include="scripts\update_project_files.ps1" />
+    <None Include="scripts\generate_new_mocs.ps1" />
+    <None Include="scripts\build_and_run_modular.ps1" />
+    <None Include="scripts\final_build.ps1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="fix_missing_functions.txt" />
+    <Text Include="info_funcs.txt" />
+  </ItemGroup>
+</Project>

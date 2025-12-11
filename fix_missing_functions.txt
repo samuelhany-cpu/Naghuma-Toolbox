@@ -1,0 +1,115 @@
+// Add these functions after finalizeProcessing() in MainWindow.cpp
+
+void MainWindow::showImageInfo() {
+    if (!imageLoaded) {
+        QMessageBox::critical(this, "Error", "Please load an image first!");
+        return;
+    }
+    
+    QDialog *infoDialog = new QDialog(this);
+    infoDialog->setWindowTitle("Image Information");
+    infoDialog->setModal(true);
+    infoDialog->setMinimumSize(550, 450);
+    
+    QVBoxLayout *layout = new QVBoxLayout(infoDialog);
+    
+    QLabel *titleLabel = new QLabel("Detailed Image Information");
+    titleLabel->setStyleSheet("font-size: 14pt; font-weight: bold; color: #ff69b4; padding: 15px;");
+    layout->addWidget(titleLabel);
+    
+    QTextEdit *infoText = new QTextEdit();
+    infoText->setReadOnly(true);
+    
+    QString info;
+    int rows = currentImage.rows;
+    int cols = currentImage.cols;
+    int channels = currentImage.channels();
+    
+    QString imgType;
+    if (channels == 1) imgType = "Grayscale";
+    else if (channels == 3) imgType = "Color (RGB/BGR)";
+    else if (channels == 4) imgType = "Color with Alpha (RGBA)";
+    else imgType = QString("Multi-channel (%1)").arg(channels);
+    
+    double minVal, maxVal;
+    cv::minMaxLoc(currentImage, &minVal, &maxVal);
+    cv::Scalar meanScalar = cv::mean(currentImage);
+    double meanVal = meanScalar[0];
+    
+    info += "===============================================\n\n";
+    info += QString("  Dimensions: %1 x %2 px\n").arg(cols).arg(rows);
+    info += QString("  Image Type: %1\n").arg(imgType);
+    info += QString("  Channels: %1\n").arg(channels);
+    info += QString("  Min/Max/Mean: %1 / %2 / %3\n").arg(minVal).arg(maxVal).arg(meanVal, 0, 'f', 2);
+    info += QString("\n  File: %1\n").arg(imagePath);
+    info += "\n===============================================";
+    
+    infoText->setPlainText(info);
+    layout->addWidget(infoText);
+    
+    QPushButton *closeBtn = new QPushButton("Close");
+    closeBtn->setProperty("class", "accent");
+    connect(closeBtn, &QPushButton::clicked, infoDialog, &QDialog::accept);
+    
+    QHBoxLayout *btnLayout = new QHBoxLayout();
+    btnLayout->addStretch();
+    btnLayout->addWidget(closeBtn);
+    layout->addLayout(btnLayout);
+    
+    infoDialog->exec();
+}
+
+void MainWindow::showPixelInfo() {
+    if (!imageLoaded) {
+        QMessageBox::critical(this, "Error", "Please load an image first!");
+        return;
+    }
+    
+    bool ok;
+    QString input = QInputDialog::getText(this, "Pixel Information", 
+        QString("Enter coordinates (x,y) [0-%1, 0-%2]:").arg(currentImage.cols-1).arg(currentImage.rows-1),
+        QLineEdit::Normal, "0,0", &ok);
+    
+    if (ok && !input.isEmpty()) {
+        QStringList coords = input.split(',');
+        if (coords.size() == 2) {
+            int x = coords[0].trimmed().toInt();
+            int y = coords[1].trimmed().toInt();
+            
+            if (x >= 0 && x < currentImage.cols && y >= 0 && y < currentImage.rows) {
+                QString valueStr;
+                if (currentImage.channels() == 1) {
+                    uchar val = currentImage.at<uchar>(y, x);
+                    valueStr = QString("Intensity: %1").arg(val);
+                } else if (currentImage.channels() == 3) {
+                    cv::Vec3b val = currentImage.at<cv::Vec3b>(y, x);
+                    valueStr = QString("B:%1, G:%2, R:%3").arg(val[0]).arg(val[1]).arg(val[2]);
+                }
+                
+                QMessageBox::information(this, "Pixel Value", 
+                    QString("Position: (%1, %2)\n%3").arg(x).arg(y).arg(valueStr));
+            }
+        }
+    }
+}
+
+void MainWindow::showImageStats() {
+    if (!imageLoaded) {
+        QMessageBox::critical(this, "Error", "Please load an image first!");
+        return;
+    }
+    
+    double minVal, maxVal;
+    cv::minMaxLoc(currentImage, &minVal, &maxVal);
+    cv::Scalar meanScalar = cv::mean(currentImage);
+    cv::Mat meanMat, stdDevMat;
+    cv::meanStdDev(currentImage, meanMat, stdDevMat);
+    
+    QString stats = QString(
+        "Image Statistics:\n\n"
+        "Min: %1\nMax: %2\nMean: %3\nStd Dev: %4\nRange: %5"
+    ).arg(minVal).arg(maxVal).arg(meanScalar[0], 0, 'f', 2)
+     .arg(stdDevMat.at<double>(0,0), 0, 'f', 2).arg(maxVal - minVal);
+    
+    QMessageBox::information(this, "Image Statistics", stats);
+}

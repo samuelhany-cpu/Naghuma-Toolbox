@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <ProjectGuid>{E4A1F008-3C44-44BA-B5D4-46BC704BB57E}</ProjectGuid>
+    <RootNamespace>NaghumaToolbox</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)lib;F:\OpenCV\opencv\build\include;C:\Qt\6.7.3\msvc2019_64\include;C:\Qt\6.7.3\msvc2019_64\include\QtCore;C:\Qt\6.7.3\msvc2019_64\include\QtGui;C:\Qt\6.7.3\msvc2019_64\include\QtWidgets;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>F:\OpenCV\opencv\build\x64\vc15\lib;C:\Qt\6.7.3\msvc2019_64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opencv_world430d.lib;Qt6Cored.lib;Qt6Guid.lib;Qt6Widgetsd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\MainWindow.cpp" />
+    <ClCompile Include="src\ImageCanvas.cpp" />
+    <ClCompile Include="src\ImageProcessor.cpp" />
+    <ClCompile Include="src\HistogramWidget.cpp" />
+    <ClCompile Include="src\TransformDialog.cpp" />
+    <ClCompile Include="src\RightSidebarWidget.cpp" />
+    <ClCompile Include="src\LayerManager.cpp" />
+    <ClCompile Include="src\ImageMetrics.cpp" />
+    <ClCompile Include="src\AdjustmentDialog.cpp" />
+    <ClCompile Include="src\BrushTool.cpp" />
+    <ClCompile Include="src\BrushDialog.cpp" />
+    <ClCompile Include="lib\filters\ImageFilters.cpp" />
+    <ClCompile Include="src\moc_MainWindow.cpp" />
+    <ClCompile Include="src\moc_ImageCanvas.cpp" />
+    <ClCompile Include="src\moc_HistogramWidget.cpp" />
+    <ClCompile Include="src\moc_TransformDialog.cpp" />
+    <ClCompile Include="src\moc_RightSidebarWidget.cpp" />
+    <ClCompile Include="src\moc_LayerManager.cpp" />
+    <ClCompile Include="src\moc_AdjustmentDialog.cpp" />
+    <ClCompile Include="src\moc_BrushTool.cpp" />
+    <ClCompile Include="src\moc_BrushDialog.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\MainWindow.h" />
+    <ClInclude Include="include\ImageCanvas.h" />
+    <ClInclude Include="include\ImageProcessor.h" />
+    <ClInclude Include="include\HistogramWidget.h" />
+    <ClInclude Include="include\TransformDialog.h" />
+    <ClInclude Include="include\RightSidebarWidget.h" />
+    <ClInclude Include="include\LayerManager.h" />
+    <ClInclude Include="include\ImageMetrics.h" />
+    <ClInclude Include="include\AdjustmentDialog.h" />
+    <ClInclude Include="include\BrushTool.h" />
+    <ClInclude Include="include\BrushDialog.h" />
+    <ClInclude Include="include\filters\ImageFilters.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="QUICK_FIX.md" />
+    <None Include="scripts\add_new_files.ps1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="FIX_DRAWING_CRASH.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>
