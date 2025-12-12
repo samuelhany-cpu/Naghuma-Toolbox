@@ -18,6 +18,8 @@ class ImageCanvas;
 class RightSidebarWidget;
 class CropTool;
 class CollapsibleToolbar;
+class ROIManager;
+class RectangleROI;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -63,6 +65,15 @@ private slots:
     void fitToWindow();
     void actualSize();
     void onZoomChanged(double level);
+    
+    // ROI Tools - NEW
+    void toggleROIMode();
+    void showROIStatistics();
+    void saveROIs();
+    void loadROIs();
+    void onROIMousePress(const QPoint& pos);
+    void onROIMouseMove(const QPoint& pos);
+    void onROIMouseRelease(const QPoint& pos);
     
     // Compression
     void applyCompression();
@@ -168,6 +179,14 @@ private:
     CropTool *cropTool;
     bool cropMode;
     cv::Mat cropPreviewImage;
+    
+    // ROI tool - NEW
+    ROIManager *roiManager;
+    bool roiMode;
+    QPoint roiStartPoint;
+    QPoint roiEndPoint;
+    bool roiSelecting;
+    RectangleROI *currentROI;
 };
 
 #endif // MAINWINDOW_H
