@@ -10,6 +10,9 @@
 #include "AutoEnhanceDialog.h"
 #include "NoiseRemovalDialog.h"
 #include "CollapsibleToolbar.h"
+#include "ROIManager.h"
+#include "ROIShape.h"
+#include "ROIDialog.h"
 #include "filters/ImageFilters.h"
 #include "ImageMetrics.h"
 #include "Theme.h"
@@ -29,6 +32,12 @@ MainWindow::MainWindow(QWidget *parent)
     
     // Initialize crop tool
     cropTool = new CropTool(this);
+    
+    // Initialize ROI tool
+    roiManager = new ROIManager(this);
+    roiMode = false;
+    roiSelecting = false;
+    currentROI = nullptr;
     
     QApplication::setStyle("Fusion");
     setStyleSheet(Theme::MAIN_STYLESHEET);
@@ -180,6 +189,19 @@ void MainWindow::createMenuBar() {
     QAction *fitToWindowAction = viewMenu->addAction("Fit to Window");
     fitToWindowAction->setShortcut(Qt::CTRL | Qt::Key_9);
     connect(fitToWindowAction, &QAction::triggered, this, &MainWindow::fitToWindow);
+    
+    // Analysis Menu - NEW
+    QMenu *analysisMenu = menuBar->addMenu("Analysis");
+    
+    QAction *roiModeAction = analysisMenu->addAction("Toggle ROI Mode");
+    roiModeAction->setCheckable(true);
+    roiModeAction->setShortcut(Qt::CTRL | Qt::Key_R);
+    connect(roiModeAction, &QAction::triggered, this, &MainWindow::toggleROIMode);
+    
+    ADD_MENU_ACTION(analysisMenu, "ROI Statistics...", showROIStatistics);
+    analysisMenu->addSeparator();
+    ADD_MENU_ACTION(analysisMenu, "Save ROIs...", saveROIs);
+    ADD_MENU_ACTION(analysisMenu, "Load ROIs...", loadROIs);
 }
 
 void MainWindow::createToolBar() {
@@ -1710,47 +1732,53 @@ void MainWindow::toggleCropMode() {
 }
 
 void MainWindow::onCropMousePress(const QPoint& pos) {
-    if (!cropMode || cropPreviewImage.empty() || pos.x() < 0 || pos.y() < 0) return;
-    
-    // Ensure position is within image bounds
-    if (pos.x() >= cropPreviewImage.cols || pos.y() >= cropPreviewImage.rows) return;
-    
-    cropTool->startSelection(pos);
+    if (cropMode && !cropPreviewImage.empty() && pos.x() >= 0 && pos.y() >= 0) {
+        // Ensure position is within image bounds
+        if (pos.x() >= cropPreviewImage.cols || pos.y() >= cropPreviewImage.rows) return;
+        
+        cropTool->startSelection(pos);
+    } else if (roiMode) {
+        onROIMousePress(pos);
+    }
 }
 
 void MainWindow::onCropMouseMove(const QPoint& pos) {
-    if (!cropMode || cropPreviewImage.empty() || pos.x() < 0 || pos.y() < 0) return;
-    
-    // Ensure position is within image bounds
-    if (pos.x() >= cropPreviewImage.cols || pos.y() >= cropPreviewImage.rows) return;
-    
-    if (cropTool->isSelectingNow()) {
-        cropTool->updateSelection(pos);
+    if (cropMode && !cropPreviewImage.empty() && pos.x() >= 0 && pos.y() >= 0) {
+        // Ensure position is within image bounds
+        if (pos.x() >= cropPreviewImage.cols || pos.y() >= cropPreviewImage.rows) return;
         
-        // Update preview with selection overlay
-        cv::Mat preview = cropTool->getPreview(cropPreviewImage);
-        processedImage = preview;
-        processedCanvas->setImage(processedImage);
+        if (cropTool->isSelectingNow()) {
+            cropTool->updateSelection(pos);
+            
+            // Update preview with selection overlay
+            cv::Mat preview = cropTool->getPreview(cropPreviewImage);
+            processedImage = preview;
+            processedCanvas->setImage(processedImage);
+        }
+    } else if (roiMode) {
+        onROIMouseMove(pos);
     }
 }
 
 void MainWindow::onCropMouseRelease(const QPoint& pos) {
-    if (!cropMode || cropPreviewImage.empty()) return;
-    
-    cropTool->finishSelection();
-    
-    // Update preview with final selection
-    if (cropTool->hasSelection() && cropTool->isValidCrop()) {
-        cv::Mat preview = cropTool->getPreview(cropPreviewImage);
-        processedImage = preview;
-        processedCanvas->setImage(processedImage);
+    if (cropMode && !cropPreviewImage.empty()) {
+        cropTool->finishSelection();
         
-        QRect cropRect = cropTool->getCropRect();
-        updateStatus(QString("Crop area selected: %1x%2 at (%3, %4). Click 'Apply Crop' to crop the image.")
-            .arg(cropRect.width())
-            .arg(cropRect.height())
-            .arg(cropRect.x())
-            .arg(cropRect.y()), "success");
+        // Update preview with final selection
+        if (cropTool->hasSelection() && cropTool->isValidCrop()) {
+            cv::Mat preview = cropTool->getPreview(cropPreviewImage);
+            processedImage = preview;
+            processedCanvas->setImage(processedImage);
+            
+            QRect cropRect = cropTool->getCropRect();
+            updateStatus(QString("Crop area selected: %1x%2 at (%3, %4). Click 'Apply Crop' to crop the image.")
+                .arg(cropRect.width())
+                .arg(cropRect.height())
+                .arg(cropRect.x())
+                .arg(cropRect.y()), "success");
+        }
+    } else if (roiMode) {
+        onROIMouseRelease(pos);
     }
 }
 
@@ -1861,6 +1889,176 @@ void MainWindow::cancelCrop() {
 }
 
 // ============================================================================
+// ROI TOOL IMPLEMENTATION
+// ============================================================================
+
+void MainWindow::toggleROIMode() {
+    if (!imageLoaded) {
+        QMessageBox::warning(this, "Warning", "Please load an image first!");
+        return;
+    }
+    
+    roiMode = !roiMode;
+    
+    if (roiMode) {
+        // Disable crop mode if active
+        if (cropMode) {
+            toggleCropMode();
+        }
+        
+        updateStatus("ROI mode ENABLED. Click and drag to select region of interest.", "success");
+        processedCanvas->setMouseEventsEnabled(true);
+    } else {
+        updateStatus("ROI mode DISABLED", "info");
+        roiSelecting = false;
+        if (currentROI) {
+            delete currentROI;
+            currentROI = nullptr;
+        }
+    }
+}
+
+void MainWindow::showROIStatistics() {
+    if (!imageLoaded) {
+        QMessageBox::warning(this, "Warning", "No image loaded!");
+        return;
+    }
+    
+    if (roiManager->count() == 0) {
+        QMessageBox::information(this, "No ROIs", 
+            "No ROIs defined. Use ROI mode to select regions first.");
+        return;
+    }
+    
+    ROIDialog dialog(roiManager, currentImage, this);
+    dialog.exec();
+}
+
+void MainWindow::saveROIs() {
+    if (roiManager->count() == 0) {
+        QMessageBox::warning(this, "No ROIs", "No ROIs to save!");
+        return;
+    }
+    
+    QString filename = QFileDialog::getSaveFileName(this,
+        "Save ROIs",
+        "",
+        "JSON Files (*.json);;All Files (*)");
+    
+    if (filename.isEmpty()) return;
+    
+    if (roiManager->saveToFile(filename)) {
+        updateStatus("ROIs saved successfully!", "success");
+    } else {
+        QMessageBox::critical(this, "Error", "Failed to save ROIs!");
+    }
+}
+
+void MainWindow::loadROIs() {
+    QString filename = QFileDialog::getOpenFileName(this,
+        "Load ROIs",
+        "",
+        "JSON Files (*.json);;All Files (*)");
+    
+    if (filename.isEmpty()) return;
+    
+    if (roiManager->loadFromFile(filename)) {
+        updateStatus(QString("Loaded %1 ROIs successfully!").arg(roiManager->count()), "success");
+        updateDisplay();
+    } else {
+        QMessageBox::critical(this, "Error", "Failed to load ROIs!");
+    }
+}
+
+void MainWindow::onROIMousePress(const QPoint& pos) {
+    if (!roiMode || !imageLoaded) return;
+    
+    roiStartPoint = pos;
+    roiSelecting = true;
+}
+
+void MainWindow::onROIMouseMove(const QPoint& pos) {
+    if (!roiMode || !roiSelecting) return;
+    
+    roiEndPoint = pos;
+    
+    // Create/update temporary ROI for preview
+    QRect rect(
+        std::min(roiStartPoint.x(), roiEndPoint.x()),
+        std::min(roiStartPoint.y(), roiEndPoint.y()),
+        std::abs(roiEndPoint.x() - roiStartPoint.x()),
+        std::abs(roiEndPoint.y() - roiStartPoint.y())
+    );
+    
+    if (currentROI) {
+        currentROI->setRect(rect);
+    } else {
+        currentROI = new RectangleROI(rect, 
+            QString("ROI %1").arg(roiManager->count() + 1));
+    }
+    
+    // Update status with dimensions
+    updateStatus(QString("ROI: %1x%2 at (%3, %4)")
+        .arg(rect.width()).arg(rect.height())
+        .arg(rect.x()).arg(rect.y()), "info");
+}
+
+void MainWindow::onROIMouseRelease(const QPoint& pos) {
+    if (!roiMode || !roiSelecting) return;
+    
+    roiSelecting = false;
+    
+    if (currentROI && currentROI->getBounds().width() > 5 && 
+        currentROI->getBounds().height() > 5) {
+        
+        // Calculate statistics
+        ROIStats stats = currentROI->calculateStats(currentImage);
+        
+        // Add to manager
+        roiManager->addROI(currentROI);
+        currentROI = nullptr;
+        
+        updateStatus(QString("ROI added! Mean: %1, Std: %2")
+            .arg(stats.mean, 0, 'f', 2)
+            .arg(stats.stdDev, 0, 'f', 2), "success");
+    } else {
+        // Too small, discard
+        delete currentROI;
+        currentROI = nullptr;
+        updateStatus("ROI too small, discarded", "warning");
+    }
+}
+
+// ============================================================================
+// ZOOM AND VIEW CONTROLS
+// ============================================================================
+
+void MainWindow::zoomIn() {
+    originalCanvas->zoomIn();
+    processedCanvas->zoomIn();
+}
+
+void MainWindow::zoomOut() {
+    originalCanvas->zoomOut();
+    processedCanvas->zoomOut();
+}
+
+void MainWindow::fitToWindow() {
+    originalCanvas->fitToWindow();
+    processedCanvas->fitToWindow();
+}
+
+void MainWindow::actualSize() {
+    originalCanvas->actualSize();
+    processedCanvas->actualSize();
+}
+
+void MainWindow::onZoomChanged(double level) {
+    int percent = static_cast<int>(level * 100);
+    zoomLabel->setText(QString("%1%").arg(percent));
+}
+
+// ============================================================================
 // KEYBOARD EVENT HANDLING
 // ============================================================================
 
@@ -1906,33 +2104,4 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
     
     // Pass other events to base class
     QMainWindow::keyPressEvent(event);
-}
-
-// ============================================================================
-// ZOOM AND VIEW CONTROLS
-// ============================================================================
-
-void MainWindow::zoomIn() {
-    originalCanvas->zoomIn();
-    processedCanvas->zoomIn();
-}
-
-void MainWindow::zoomOut() {
-    originalCanvas->zoomOut();
-    processedCanvas->zoomOut();
-}
-
-void MainWindow::fitToWindow() {
-    originalCanvas->fitToWindow();
-    processedCanvas->fitToWindow();
-}
-
-void MainWindow::actualSize() {
-    originalCanvas->actualSize();
-    processedCanvas->actualSize();
-}
-
-void MainWindow::onZoomChanged(double level) {
-    int percent = static_cast<int>(level * 100);
-    zoomLabel->setText(QString("%1%").arg(percent));
 }
