@@ -62,6 +62,9 @@ private slots:
     // Auto Enhancement
     void applyAutoEnhancement();
     
+    // Noise Removal
+    void applyNoiseRemoval();
+    
     // Histogram & Thresholding
     void showHistogram();
     void applyHistogramEqualization();

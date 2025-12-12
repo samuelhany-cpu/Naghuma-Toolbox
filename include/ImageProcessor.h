@@ -21,6 +21,11 @@ public:
     static void applyAdaptiveHistogramEqualization(const cv::Mat& src, cv::Mat& dst);
     static void applyContrastStretching(const cv::Mat& src, cv::Mat& dst);
     
+    // Noise Removal
+    static void applyGaussianNoiseRemoval(const cv::Mat& src, cv::Mat& dst, int kernelSize = 5);
+    static void applyMedianFilter(const cv::Mat& src, cv::Mat& dst, int kernelSize = 5);
+    static void applyBilateralFilter(const cv::Mat& src, cv::Mat& dst, int diameter = 9, double sigmaColor = 75, double sigmaSpace = 75);
+    
     // Adjustments
     static void adjustBrightnessContrast(const cv::Mat& src, cv::Mat& dst, int brightness, int contrast);
     

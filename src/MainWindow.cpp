@@ -8,6 +8,7 @@
 #include "CropTool.h"
 #include "CompressionDialog.h"
 #include "AutoEnhanceDialog.h"
+#include "NoiseRemovalDialog.h"
 #include "filters/ImageFilters.h"
 #include "ImageMetrics.h"
 #include "Theme.h"
@@ -122,6 +123,7 @@ void MainWindow::createMenuBar() {
     ADD_MENU_ACTION(processMenu, "Brightness/Contrast", applyBrightnessContrast);
     processMenu->addSeparator();
     ADD_MENU_ACTION(processMenu, "Auto Enhance...", applyAutoEnhancement);
+    ADD_MENU_ACTION(processMenu, "Noise Removal...", applyNoiseRemoval);
     processMenu->addSeparator();
     ADD_MENU_ACTION(processMenu, "Grayscale", convertToGrayscale);
     ADD_MENU_ACTION(processMenu, "Binary Threshold", applyBinaryThreshold);
@@ -1223,6 +1225,66 @@ void MainWindow::applyAutoEnhancement() {
         QString statusMsg = QString("Auto enhancement applied! Algorithm: %1, PSNR: %2 dB")
             .arg(algorithmType == "Adaptive Histogram" ? "CLAHE" : "Contrast Stretching")
             .arg(std::isinf(dialog.getPSNR()) ? QString("∞") : QString::number(dialog.getPSNR(), 'f', 2));
+        
+        updateDisplay();
+        updateStatus(statusMsg, "success");
+    }
+}
+
+void MainWindow::applyNoiseRemoval() {
+    if (!checkImageLoaded("apply noise removal")) return;
+    
+    NoiseRemovalDialog dialog(currentImage, this);
+    
+    if (dialog.exec() == QDialog::Accepted && dialog.wasApplied()) {
+        processedImage = dialog.getDenoisedImage();
+        recentlyProcessed = true;
+        
+        // Store filter parameters
+        QString filterType = dialog.getFilterType();
+        int kernelSize = dialog.getKernelSize();
+        double sigmaColor = dialog.getSigmaColor();
+        double sigmaSpace = dialog.getSigmaSpace();
+        
+        // Create operation function based on filter type
+        auto operation = [filterType, kernelSize, sigmaColor, sigmaSpace](const cv::Mat& input) -> cv::Mat {
+            cv::Mat result;
+            if (filterType == "Gaussian") {
+                ImageProcessor::applyGaussianNoiseRemoval(input, result, kernelSize);
+            } else if (filterType == "Median") {
+                ImageProcessor::applyMedianFilter(input, result, kernelSize);
+            } else {
+                ImageProcessor::applyBilateralFilter(input, result, kernelSize, sigmaColor, sigmaSpace);
+            }
+            return result;
+        };
+        
+        if (!processedImage.empty()) {
+            currentImage = processedImage.clone();
+            
+            QString layerName;
+            if (filterType == "Gaussian") {
+                layerName = QString("Noise Removal: Gaussian (K:%1, SNR:+%2dB)")
+                    .arg(kernelSize)
+                    .arg(dialog.getSNRImprovement(), 0, 'f', 1);
+            } else if (filterType == "Median") {
+                layerName = QString("Noise Removal: Median (K:%1, SNR:+%2dB)")
+                    .arg(kernelSize)
+                    .arg(dialog.getSNRImprovement(), 0, 'f', 1);
+            } else {
+                layerName = QString("Noise Removal: Bilateral (D:%1, SNR:+%2dB)")
+                    .arg(kernelSize)
+                    .arg(dialog.getSNRImprovement(), 0, 'f', 1);
+            }
+            
+            rightSidebar->addLayer(layerName, "denoise", processedImage, operation);
+            rightSidebar->updateHistogram(processedImage);
+            updateUndoButtonState();
+        }
+        
+        QString statusMsg = QString("Noise removal applied! Filter: %1, SNR Improvement: +%2 dB")
+            .arg(filterType)
+            .arg(dialog.getSNRImprovement(), 0, 'f', 2);
         
         updateDisplay();
         updateStatus(statusMsg, "success");

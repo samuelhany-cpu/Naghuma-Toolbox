@@ -313,7 +313,7 @@ void ImageProcessor::applyContrastStretching(const cv::Mat& src, cv::Mat& dst) {
             double minVal, maxVal;
             cv::minMaxLoc(channels[i], &minVal, &maxVal);
             
-            // Apply contrast stretching formula: (pixel - min) * (255 / (max - min))
+            // Apply contrast stretching
             if (maxVal - minVal > 0) {
                 channels[i].convertTo(channels[i], CV_8U, 255.0 / (maxVal - minVal), -minVal * 255.0 / (maxVal - minVal));
             }
@@ -332,4 +332,39 @@ void ImageProcessor::applyContrastStretching(const cv::Mat& src, cv::Mat& dst) {
             dst = src.clone();
         }
     }
+}
+
+// ============================================================================
+// NOISE REMOVAL ALGORITHMS
+// ============================================================================
+
+void ImageProcessor::applyGaussianNoiseRemoval(const cv::Mat& src, cv::Mat& dst, int kernelSize) {
+    // Ensure kernel size is odd and at least 3
+    if (kernelSize % 2 == 0) kernelSize++;
+    if (kernelSize < 3) kernelSize = 3;
+    
+    // Apply Gaussian blur for noise removal
+    cv::GaussianBlur(src, dst, cv::Size(kernelSize, kernelSize), 0);
+}
+
+void ImageProcessor::applyMedianFilter(const cv::Mat& src, cv::Mat& dst, int kernelSize) {
+    // Ensure kernel size is odd and at least 3
+    if (kernelSize % 2 == 0) kernelSize++;
+    if (kernelSize < 3) kernelSize = 3;
+    
+    // Apply median filter - excellent for salt & pepper noise
+    cv::medianBlur(src, dst, kernelSize);
+}
+
+void ImageProcessor::applyBilateralFilter(const cv::Mat& src, cv::Mat& dst, int diameter, double sigmaColor, double sigmaSpace) {
+    // Bilateral filter - preserves edges while removing noise
+    // diameter: Diameter of each pixel neighborhood
+    // sigmaColor: Filter sigma in the color space
+    // sigmaSpace: Filter sigma in the coordinate space
+    
+    if (diameter < 1) diameter = 9;
+    if (sigmaColor < 1) sigmaColor = 75;
+    if (sigmaSpace < 1) sigmaSpace = 75;
+    
+    cv::bilateralFilter(src, dst, diameter, sigmaColor, sigmaSpace);
 }
