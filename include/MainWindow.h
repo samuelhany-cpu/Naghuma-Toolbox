@@ -57,6 +57,13 @@ private slots:
     void onCropMouseMove(const QPoint& pos);
     void onCropMouseRelease(const QPoint& pos);
     
+    // Zoom and View
+    void zoomIn();
+    void zoomOut();
+    void fitToWindow();
+    void actualSize();
+    void onZoomChanged(double level);
+    
     // Compression
     void applyCompression();
     
@@ -140,6 +147,7 @@ private:
     QLabel *processedInfoLabel;
     QLabel *metricsLabel;
     QLabel *statusLabel;
+    QLabel *zoomLabel;  // NEW: Zoom level display
     QProgressBar *progressBar;
     
     RightSidebarWidget *rightSidebar;

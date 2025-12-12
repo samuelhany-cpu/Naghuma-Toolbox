@@ -159,6 +159,27 @@ void MainWindow::createMenuBar() {
     fftMenu->addSeparator();
     ADD_MENU_ACTION(fftMenu, "Low-Pass Filter", applyLowPassFilter);
     ADD_MENU_ACTION(fftMenu, "High-Pass Filter", applyHighPassFilter);
+    
+    // View Menu - NEW
+    QMenu *viewMenu = menuBar->addMenu("View");
+    
+    QAction *zoomInAction = viewMenu->addAction("Zoom In");
+    zoomInAction->setShortcut(QKeySequence::ZoomIn);
+    connect(zoomInAction, &QAction::triggered, this, &MainWindow::zoomIn);
+    
+    QAction *zoomOutAction = viewMenu->addAction("Zoom Out");
+    zoomOutAction->setShortcut(QKeySequence::ZoomOut);
+    connect(zoomOutAction, &QAction::triggered, this, &MainWindow::zoomOut);
+    
+    viewMenu->addSeparator();
+    
+    QAction *actualSizeAction = viewMenu->addAction("Actual Size (100%)");
+    actualSizeAction->setShortcut(Qt::CTRL | Qt::Key_0);
+    connect(actualSizeAction, &QAction::triggered, this, &MainWindow::actualSize);
+    
+    QAction *fitToWindowAction = viewMenu->addAction("Fit to Window");
+    fitToWindowAction->setShortcut(Qt::CTRL | Qt::Key_9);
+    connect(fitToWindowAction, &QAction::triggered, this, &MainWindow::fitToWindow);
 }
 
 void MainWindow::createToolBar() {
@@ -181,9 +202,9 @@ void MainWindow::createToolBar() {
     addBtn("Save", &MainWindow::saveImage);
     addBtn("Reset", &MainWindow::resetImage);
     
-    // Undo button - NEW
+    // Undo button
     undoButton = addBtn("Undo", &MainWindow::undoLastOperation);
-    undoButton->setEnabled(false);  // Initially disabled
+    undoButton->setEnabled(false);
     undoButton->setToolTip("Undo last operation (removes last layer)");
     
     addBtn("Use Processed", &MainWindow::useProcessedImage, 120)->setToolTip("Use the processed image for next operations");
@@ -194,6 +215,20 @@ void MainWindow::createToolBar() {
     cropModeBtn->setObjectName("cropModeButton");
     cropModeBtn->setCheckable(true);
     cropModeBtn->setToolTip("Toggle crop mode to select and crop image region");
+    toolbar->addSeparator();
+    
+    // Zoom controls - NEW
+    addBtn("Zoom In", &MainWindow::zoomIn, 80)->setToolTip("Zoom in (Ctrl + Wheel or Ctrl++)");
+    addBtn("Zoom Out", &MainWindow::zoomOut, 80)->setToolTip("Zoom out (Ctrl + Wheel or Ctrl-)");
+    addBtn("Fit", &MainWindow::fitToWindow, 60)->setToolTip("Fit to window (Ctrl+9)");
+    addBtn("100%", &MainWindow::actualSize, 60)->setToolTip("Actual size (Ctrl+0)");
+    
+    // Zoom level display
+    zoomLabel = new QLabel("100%", this);
+    zoomLabel->setStyleSheet("color: #e879f9; font-weight: bold; padding: 0 10px;");
+    zoomLabel->setMinimumWidth(60);
+    zoomLabel->setAlignment(Qt::AlignCenter);
+    toolbar->addWidget(zoomLabel);
     toolbar->addSeparator();
     
     addBtn("Grayscale", &MainWindow::convertToGrayscale);
@@ -257,6 +292,9 @@ void MainWindow::createCentralWidget() {
     originalCanvas = new ImageCanvas(originalContainer, "#e879f9");
     originalContainerLayout->addWidget(originalCanvas);
     
+    // Connect zoom signal
+    connect(originalCanvas, &ImageCanvas::zoomChanged, this, &MainWindow::onZoomChanged);
+    
     originalLayout->addWidget(originalContainer, 1);
     
     originalInfoLabel = new QLabel("No image loaded");
@@ -286,6 +324,9 @@ void MainWindow::createCentralWidget() {
     connect(processedCanvas, &ImageCanvas::mousePressed, this, &MainWindow::onCropMousePress);
     connect(processedCanvas, &ImageCanvas::mouseMoved, this, &MainWindow::onCropMouseMove);
     connect(processedCanvas, &ImageCanvas::mouseReleased, this, &MainWindow::onCropMouseRelease);
+    
+    // Connect zoom signal
+    connect(processedCanvas, &ImageCanvas::zoomChanged, this, &MainWindow::onZoomChanged);
     
     processedLayout->addWidget(processedContainer, 1);
     
@@ -1824,6 +1865,27 @@ void MainWindow::cancelCrop() {
 // ============================================================================
 
 void MainWindow::keyPressEvent(QKeyEvent *event) {
+    // Handle Zoom shortcuts
+    if (event->modifiers() & Qt::ControlModifier) {
+        if (event->key() == Qt::Key_Plus || event->key() == Qt::Key_Equal) {
+            zoomIn();
+            event->accept();
+            return;
+        } else if (event->key() == Qt::Key_Minus) {
+            zoomOut();
+            event->accept();
+            return;
+        } else if (event->key() == Qt::Key_0) {
+            actualSize();
+            event->accept();
+            return;
+        } else if (event->key() == Qt::Key_9) {
+            fitToWindow();
+            event->accept();
+            return;
+        }
+    }
+    
     // Handle Enter/Return key to apply crop
     if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
         if (cropMode && cropTool->hasSelection() && cropTool->isValidCrop()) {
@@ -1844,4 +1906,33 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
     
     // Pass other events to base class
     QMainWindow::keyPressEvent(event);
+}
+
+// ============================================================================
+// ZOOM AND VIEW CONTROLS
+// ============================================================================
+
+void MainWindow::zoomIn() {
+    originalCanvas->zoomIn();
+    processedCanvas->zoomIn();
+}
+
+void MainWindow::zoomOut() {
+    originalCanvas->zoomOut();
+    processedCanvas->zoomOut();
+}
+
+void MainWindow::fitToWindow() {
+    originalCanvas->fitToWindow();
+    processedCanvas->fitToWindow();
+}
+
+void MainWindow::actualSize() {
+    originalCanvas->actualSize();
+    processedCanvas->actualSize();
+}
+
+void MainWindow::onZoomChanged(double level) {
+    int percent = static_cast<int>(level * 100);
+    zoomLabel->setText(QString("%1%").arg(percent));
 }

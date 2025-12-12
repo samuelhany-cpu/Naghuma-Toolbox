@@ -92,6 +92,7 @@
     <None Include="PHASE8_AUTO_ENHANCE_COMPLETE.md" />
     <None Include="PHASE8_GITHUB_UPLOAD.md" />
     <None Include="PHASE9_NOISE_REMOVAL_COMPLETE.md" />
+    <None Include="PROJECT_COMPLETE.md" />
     <None Include="QUICK_FIX.md" />
     <None Include="scripts\add_new_files.ps1" />
   </ItemGroup>
