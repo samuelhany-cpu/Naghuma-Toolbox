@@ -9,6 +9,7 @@
 #include "CompressionDialog.h"
 #include "AutoEnhanceDialog.h"
 #include "NoiseRemovalDialog.h"
+#include "CollapsibleToolbar.h"
 #include "filters/ImageFilters.h"
 #include "ImageMetrics.h"
 #include "Theme.h"
@@ -207,6 +208,32 @@ void MainWindow::createCentralWidget() {
     QHBoxLayout *mainLayout = new QHBoxLayout(centralWidget);
     mainLayout->setSpacing(0);
     mainLayout->setContentsMargins(0, 0, 0, 0);
+    
+    // Create left collapsible toolbar
+    leftToolbar = new CollapsibleToolbar(this);
+    leftToolbar->setToolbarWidth(200);
+    
+    // Add tools to toolbar with Unicode icons
+    leftToolbar->addTool("Load Image", "Load an image file", [this]() { loadImage(); }, "📁");
+    leftToolbar->addTool("Save Image", "Save processed image", [this]() { saveImage(); }, "💾");
+    leftToolbar->addSeparator();
+    
+    leftToolbar->addTool("Reset", "Reset to original image", [this]() { resetImage(); }, "↺");
+    leftToolbar->addTool("Undo", "Undo last operation", [this]() { undoLastOperation(); }, "⎌");
+    leftToolbar->addSeparator();
+    
+    leftToolbar->addTool("Crop", "Toggle crop mode", [this]() { toggleCropMode(); }, "✂");
+    leftToolbar->addTool("Transform", "Apply transformation", [this]() { applyRotation(); }, "↻");
+    leftToolbar->addSeparator();
+    
+    leftToolbar->addTool("Enhance", "Auto enhance image", [this]() { applyAutoEnhancement(); }, "✨");
+    leftToolbar->addTool("Denoise", "Remove noise", [this]() { applyNoiseRemoval(); }, "🔇");
+    leftToolbar->addSeparator();
+    
+    leftToolbar->addTool("Filters", "Apply filters", [this]() { applyGaussianBlur(); }, "◈");
+    leftToolbar->addTool("Edges", "Edge detection", [this]() { applyEdgeDetection(); }, "⚡");
+    
+    mainLayout->addWidget(leftToolbar);
     
     // Left and center area for images
     QWidget *imagesArea = new QWidget();

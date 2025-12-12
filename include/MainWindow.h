@@ -17,6 +17,7 @@
 class ImageCanvas;
 class RightSidebarWidget;
 class CropTool;
+class CollapsibleToolbar;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -131,6 +132,7 @@ private:
     );
 
     // UI Components
+    CollapsibleToolbar *leftToolbar;
     ImageCanvas *originalCanvas;
     ImageCanvas *processedCanvas;
     
