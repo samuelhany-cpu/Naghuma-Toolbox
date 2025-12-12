@@ -83,7 +83,7 @@ QPushButton* CollapsibleToolbar::addTool(const QString& text, const QString& too
     if (!iconPath.isEmpty()) {
         QIcon icon(iconPath);
         button->setIcon(icon);
-        button->setIconSize(QSize(20, 20));
+        button->setIconSize(QSize(24, 24));  // Larger initial size
         button->setToolTip(tooltip);
     } else {
         button->setText(text.left(1));  // Fallback to first letter
@@ -94,10 +94,11 @@ QPushButton* CollapsibleToolbar::addTool(const QString& text, const QString& too
     button->setProperty("fullText", text);
     button->setProperty("iconPath", iconPath);
     
+    // Updated stylesheet with explicit color
     button->setStyleSheet(R"(
         QPushButton {
             background-color: rgba(45, 37, 71, 0.6);
-            color: #c4b5fd;
+            color: #e879f9;
             border: 1px solid rgba(91, 75, 115, 0.5);
             border-radius: 10px;
         }
@@ -105,7 +106,7 @@ QPushButton* CollapsibleToolbar::addTool(const QString& text, const QString& too
             background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                                        stop:0 rgba(232, 121, 249, 0.3),
                                        stop:1 rgba(192, 38, 211, 0.3));
-            color: #e879f9;
+            color: #ffffff;
             border: 1px solid rgba(232, 121, 249, 0.6);
         }
         QPushButton:pressed {
@@ -185,25 +186,25 @@ void CollapsibleToolbar::updateButtonStyles() {
             
             if (!iconPath.isEmpty()) {
                 button->setIcon(QIcon(iconPath));
-                button->setIconSize(QSize(16, 16));
+                button->setIconSize(QSize(18, 18));
             }
             
             button->setStyleSheet(R"(
                 QPushButton {
                     background-color: rgba(45, 37, 71, 0.6);
-                    color: #c4b5fd;
+                    color: #e879f9;
                     border: 1px solid rgba(91, 75, 115, 0.5);
                     border-radius: 10px;
                     font-size: 11pt;
                     font-weight: 600;
                     text-align: left;
-                    padding-left: 15px;
+                    padding-left: 40px;
                 }
                 QPushButton:hover {
                     background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                                                stop:0 rgba(232, 121, 249, 0.3),
                                                stop:1 rgba(192, 38, 211, 0.3));
-                    color: #e879f9;
+                    color: #ffffff;
                     border: 1px solid rgba(232, 121, 249, 0.6);
                 }
                 QPushButton:pressed {
@@ -219,13 +220,13 @@ void CollapsibleToolbar::updateButtonStyles() {
             
             if (!iconPath.isEmpty()) {
                 button->setIcon(QIcon(iconPath));
-                button->setIconSize(QSize(20, 20));
+                button->setIconSize(QSize(24, 24));
             }
             
             button->setStyleSheet(R"(
                 QPushButton {
                     background-color: rgba(45, 37, 71, 0.6);
-                    color: #c4b5fd;
+                    color: #e879f9;
                     border: 1px solid rgba(91, 75, 115, 0.5);
                     border-radius: 10px;
                 }
@@ -233,7 +234,7 @@ void CollapsibleToolbar::updateButtonStyles() {
                     background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                                                stop:0 rgba(232, 121, 249, 0.3),
                                                stop:1 rgba(192, 38, 211, 0.3));
-                    color: #e879f9;
+                    color: #ffffff;
                     border: 1px solid rgba(232, 121, 249, 0.6);
                 }
                 QPushButton:pressed {
