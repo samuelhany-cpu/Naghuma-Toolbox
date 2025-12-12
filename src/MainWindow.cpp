@@ -6,6 +6,7 @@
 #include "TransformDialog.h"
 #include "AdjustmentDialog.h"
 #include "CropTool.h"
+#include "CompressionDialog.h"
 #include "filters/ImageFilters.h"
 #include "ImageMetrics.h"
 #include "Theme.h"
@@ -124,6 +125,8 @@ void MainWindow::createMenuBar() {
     ADD_MENU_ACTION(processMenu, "Gaussian Blur", applyGaussianBlur);
     ADD_MENU_ACTION(processMenu, "Edge Detection", applyEdgeDetection);
     ADD_MENU_ACTION(processMenu, "Invert Colors", invertColors);
+    processMenu->addSeparator();
+    ADD_MENU_ACTION(processMenu, "Compress Image...", applyCompression);
     
     // Filters Menu
     QMenu *filtersMenu = menuBar->addMenu("Filters");
@@ -1117,6 +1120,61 @@ void MainWindow::invertColors() {
         },
         "Invert Colors", "adjustment", "Colors inverted!"
     );
+}
+
+void MainWindow::applyCompression() {
+    if (!checkImageLoaded("apply compression")) return;
+    
+    CompressionDialog dialog(currentImage, this);
+    
+    if (dialog.exec() == QDialog::Accepted && dialog.wasApplied()) {
+        processedImage = dialog.getCompressedImage();
+        recentlyProcessed = true;
+        
+        // Store compression parameters
+        QString compressionType = dialog.getCompressionType();
+        int quality = dialog.getQuality();
+        int pngLevel = dialog.getPngLevel();
+        
+        // Create operation function based on compression type
+        auto operation = [compressionType, quality, pngLevel](const cv::Mat& input) -> cv::Mat {
+            std::vector<uchar> buffer;
+            if (compressionType == "JPEG") {
+                std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, quality};
+                cv::imencode(".jpg", input, buffer, params);
+            } else {
+                std::vector<int> params = {cv::IMWRITE_PNG_COMPRESSION, pngLevel};
+                cv::imencode(".png", input, buffer, params);
+            }
+            return cv::imdecode(buffer, cv::IMREAD_UNCHANGED);
+        };
+        
+        if (!processedImage.empty()) {
+            currentImage = processedImage.clone();
+            
+            QString layerName;
+            if (compressionType == "JPEG") {
+                layerName = QString("JPEG Compression (Q:%1, Ratio:%2x)")
+                    .arg(quality)
+                    .arg(dialog.getCompressionRatio(), 0, 'f', 2);
+            } else {
+                layerName = QString("PNG Compression (L:%1, Ratio:%2x)")
+                    .arg(pngLevel)
+                    .arg(dialog.getCompressionRatio(), 0, 'f', 2);
+            }
+            
+            rightSidebar->addLayer(layerName, "compression", processedImage, operation);
+            rightSidebar->updateHistogram(processedImage);
+            updateUndoButtonState();
+        }
+        
+        QString statusMsg = QString("Compression applied! Ratio: %1x, PSNR: %2 dB")
+            .arg(dialog.getCompressionRatio(), 0, 'f', 2)
+            .arg(std::isinf(dialog.getPSNR()) ? QString("∞") : QString::number(dialog.getPSNR(), 'f', 2));
+        
+        updateDisplay();
+        updateStatus(statusMsg, "success");
+    }
 }
 
 void MainWindow::applyLaplacianFilter() {

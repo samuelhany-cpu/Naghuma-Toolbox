@@ -56,6 +56,9 @@ private slots:
     void onCropMouseMove(const QPoint& pos);
     void onCropMouseRelease(const QPoint& pos);
     
+    // Compression
+    void applyCompression();
+    
     // Histogram & Thresholding
     void showHistogram();
     void applyHistogramEqualization();
