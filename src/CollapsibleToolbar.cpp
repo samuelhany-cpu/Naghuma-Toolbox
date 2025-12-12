@@ -36,7 +36,7 @@ void CollapsibleToolbar::setupUI() {
     
     // Toggle button at top
     toggleButton = new QPushButton(this);
-    toggleButton->setText("?");  // Hamburger menu icon
+    toggleButton->setText("?");  // Hamburger menu icon (triple bar)
     toggleButton->setToolTip("Expand/Collapse Toolbar");
     toggleButton->setFixedSize(50, 50);
     toggleButton->setStyleSheet(R"(
@@ -45,13 +45,12 @@ void CollapsibleToolbar::setupUI() {
             color: #e879f9;
             border: none;
             border-radius: 25px;
-            font-size: 20pt;
+            font-size: 24pt;
             font-weight: bold;
             margin: 5px;
         }
         QPushButton:hover {
             background-color: rgba(232, 121, 249, 0.3);
-            transform: scale(1.05);
         }
         QPushButton:pressed {
             background-color: rgba(232, 121, 249, 0.5);
@@ -146,7 +145,7 @@ void CollapsibleToolbar::setExpanded(bool expand) {
     if (expanded) {
         // Expand animation
         animateWidth(expandedWidth);
-        toggleButton->setText("?");  // Close icon
+        toggleButton->setText("×");  // Close icon (multiplication sign)
         
         // Show full text on buttons with animation
         QTimer::singleShot(Theme::ANIMATION_NORMAL / 2, this, [this]() {
@@ -155,7 +154,7 @@ void CollapsibleToolbar::setExpanded(bool expand) {
     } else {
         // Collapse animation
         animateWidth(collapsedWidth);
-        toggleButton->setText("?");  // Hamburger icon
+        toggleButton->setText("?");  // Hamburger icon (triple bar)
         
         // Show icons only
         updateButtonStyles();
