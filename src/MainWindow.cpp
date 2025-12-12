@@ -270,25 +270,25 @@ void MainWindow::createCentralWidget() {
     leftToolbar = new CollapsibleToolbar(this);
     leftToolbar->setToolbarWidth(200);
     
-    // Add tools to toolbar with Font Awesome 6 icons (Unicode codes)
-    leftToolbar->addTool("Load Image", "Load an image file", [this]() { loadImage(); }, QString::fromUtf8("\uf07c"));  // folder-open
-    leftToolbar->addTool("Save Image", "Save processed image", [this]() { saveImage(); }, QString::fromUtf8("\uf0c7"));  // save/floppy-disk
+    // Add tools to toolbar with Font Awesome 6 icons (using QChar with hex codes)
+    leftToolbar->addTool("Load Image", "Load an image file", [this]() { loadImage(); }, QString(QChar(0xf07c)));  // folder-open
+    leftToolbar->addTool("Save Image", "Save processed image", [this]() { saveImage(); }, QString(QChar(0xf0c7)));  // save/floppy-disk
     leftToolbar->addSeparator();
     
-    leftToolbar->addTool("Reset", "Reset to original image", [this]() { resetImage(); }, QString::fromUtf8("\uf2ea"));  // rotate-left
-    leftToolbar->addTool("Undo", "Undo last operation", [this]() { undoLastOperation(); }, QString::fromUtf8("\uf0e2"));  // undo
+    leftToolbar->addTool("Reset", "Reset to original image", [this]() { resetImage(); }, QString(QChar(0xf2ea)));  // rotate-left
+    leftToolbar->addTool("Undo", "Undo last operation", [this]() { undoLastOperation(); }, QString(QChar(0xf0e2)));  // undo
     leftToolbar->addSeparator();
     
-    leftToolbar->addTool("Crop", "Toggle crop mode", [this]() { toggleCropMode(); }, QString::fromUtf8("\uf125"));  // crop
-    leftToolbar->addTool("Transform", "Apply transformation", [this]() { applyRotation(); }, QString::fromUtf8("\uf2f1"));  // rotate
+    leftToolbar->addTool("Crop", "Toggle crop mode", [this]() { toggleCropMode(); }, QString(QChar(0xf125)));  // crop
+    leftToolbar->addTool("Transform", "Apply transformation", [this]() { applyRotation(); }, QString(QChar(0xf2f1)));  // rotate
     leftToolbar->addSeparator();
     
-    leftToolbar->addTool("Enhance", "Auto enhance image", [this]() { applyAutoEnhancement(); }, QString::fromUtf8("\uf005"));  // star
-    leftToolbar->addTool("Denoise", "Remove noise", [this]() { applyNoiseRemoval(); }, QString::fromUtf8("\uf130"));  // microphone
+    leftToolbar->addTool("Enhance", "Auto enhance image", [this]() { applyAutoEnhancement(); }, QString(QChar(0xf005)));  // star
+    leftToolbar->addTool("Denoise", "Remove noise", [this]() { applyNoiseRemoval(); }, QString(QChar(0xf130)));  // microphone
     leftToolbar->addSeparator();
     
-    leftToolbar->addTool("Filters", "Apply filters", [this]() { applyGaussianBlur(); }, QString::fromUtf8("\uf0b0"));  // filter
-    leftToolbar->addTool("Edges", "Edge detection", [this]() { applyEdgeDetection(); }, QString::fromUtf8("\uf0e7"));  // bolt/lightning
+    leftToolbar->addTool("Filters", "Apply filters", [this]() { applyGaussianBlur(); }, QString(QChar(0xf0b0)));  // filter
+    leftToolbar->addTool("Edges", "Edge detection", [this]() { applyEdgeDetection(); }, QString(QChar(0xf0e7)));  // bolt/lightning
     
     mainLayout->addWidget(leftToolbar);
     
