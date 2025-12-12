@@ -100,6 +100,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="CONSOLE_WARNINGS_FIX.md" />
+    <None Include="ICON_SYSTEM_FINAL.md" />
     <None Include="PHASE11_ZOOM_PAN_COMPLETE.md" />
     <None Include="PHASE11_ZOOM_PAN_PLAN.md" />
     <None Include="PHASE12_ROI_COMPLETE.md" />
