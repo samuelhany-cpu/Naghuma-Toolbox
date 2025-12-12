@@ -99,6 +99,8 @@
   <ItemGroup>
     <None Include="PHASE11_ZOOM_PAN_COMPLETE.md" />
     <None Include="PHASE11_ZOOM_PAN_PLAN.md" />
+    <None Include="PHASE12_ROI_COMPLETE.md" />
+    <None Include="PHASE12_SUCCESS_REPORT.md" />
     <None Include="PHASE8_AUTO_ENHANCE_COMPLETE.md" />
     <None Include="PHASE8_GITHUB_UPLOAD.md" />
     <None Include="PHASE9_NOISE_REMOVAL_COMPLETE.md" />

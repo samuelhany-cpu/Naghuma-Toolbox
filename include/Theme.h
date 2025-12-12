@@ -22,13 +22,8 @@ namespace Theme {
     constexpr int ANIMATION_NORMAL = 250;
     constexpr int ANIMATION_SLOW = 350;
 
-    // Main application stylesheet with animations
+    // Main application stylesheet (Qt-compatible only, no CSS3)
     const char* const MAIN_STYLESHEET = R"(
-        * {
-            /* Smooth transitions for all elements */
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
         QMainWindow {
             background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
                                        stop:0 #1a0a1f, stop:0.3 #251e35, 
@@ -42,7 +37,7 @@ namespace Theme {
             font-size: 10pt;
         }
         
-        /* Enhanced Button Styles with Animations */
+        /* Enhanced Button Styles */
         QPushButton {
             background-color: rgba(45, 37, 71, 0.8);
             color: #c4b5fd;
@@ -56,8 +51,6 @@ namespace Theme {
             background-color: rgba(91, 75, 115, 0.6);
             color: #e879f9;
             border: 1px solid rgba(232, 121, 249, 0.5);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(232, 121, 249, 0.3);
         }
         
         QPushButton:pressed {
@@ -65,7 +58,6 @@ namespace Theme {
                                        stop:0 #e879f9, stop:1 #c026d3);
             color: #ffffff;
             border: none;
-            transform: translateY(0px);
         }
         
         QPushButton.accent {
@@ -75,14 +67,11 @@ namespace Theme {
             font-weight: 600;
             border: none;
             padding: 12px 28px;
-            box-shadow: 0 2px 8px rgba(232, 121, 249, 0.4);
         }
         
         QPushButton.accent:hover {
             background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                                        stop:0 #f0abfc, stop:1 #e879f9);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(232, 121, 249, 0.5);
         }
         
         QPushButton:disabled {
@@ -91,7 +80,7 @@ namespace Theme {
             border: 1px solid rgba(61, 50, 80, 0.3);
         }
         
-        /* Form Elements with Smooth Transitions */
+        /* Form Elements */
         QLineEdit, QSpinBox, QDoubleSpinBox {
             background-color: rgba(45, 37, 71, 0.5);
             color: #f3e8ff;
@@ -103,10 +92,9 @@ namespace Theme {
         QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {
             border: 2px solid #e879f9;
             background-color: rgba(232, 121, 249, 0.08);
-            box-shadow: 0 0 0 3px rgba(232, 121, 249, 0.2);
         }
         
-        /* Enhanced Slider with Glow Effect */
+        /* Enhanced Slider */
         QSlider::groove:horizontal {
             background: rgba(45, 37, 71, 0.6);
             height: 10px;
@@ -125,8 +113,6 @@ namespace Theme {
         
         QSlider::handle:horizontal:hover {
             background: #f0abfc;
-            box-shadow: 0 0 12px rgba(232, 121, 249, 0.6);
-            transform: scale(1.1);
         }
         
         QSlider::sub-page:horizontal {
@@ -135,7 +121,7 @@ namespace Theme {
             border-radius: 5px;
         }
         
-        /* Progress Bar Animation */
+        /* Progress Bar */
         QProgressBar {
             background-color: rgba(45, 37, 71, 0.6);
             border: none;
@@ -157,7 +143,7 @@ namespace Theme {
             color: #c4b5fd;
         }
         
-        /* Enhanced GroupBox with Glow */
+        /* Enhanced GroupBox */
         QGroupBox {
             border: 2px solid rgba(232, 121, 249, 0.35);
             border-radius: 14px;
@@ -181,7 +167,7 @@ namespace Theme {
             font-size: 11pt;
         }
         
-        /* Status Bar with Gradient */
+        /* Status Bar */
         QStatusBar {
             background: rgba(26, 10, 31, 0.95);
             color: #f3e8ff;
@@ -189,7 +175,7 @@ namespace Theme {
             padding: 6px;
         }
         
-        /* Animated Menu Bar */
+        /* Menu Bar */
         QMenuBar {
             background: rgba(31, 21, 53, 0.95);
             color: #f3e8ff;
@@ -213,7 +199,7 @@ namespace Theme {
             background-color: rgba(232, 121, 249, 0.25);
         }
         
-        /* Smooth Menu Animations */
+        /* Menu */
         QMenu {
             background-color: rgba(37, 30, 53, 0.98);
             border: 2px solid rgba(91, 75, 115, 0.5);
@@ -238,7 +224,7 @@ namespace Theme {
             margin: 6px 14px;
         }
         
-        /* Toolbar with Icons */
+        /* Toolbar */
         QToolBar {
             background: rgba(26, 10, 31, 0.95);
             border-bottom: 2px solid rgba(232, 121, 249, 0.25);
@@ -252,7 +238,7 @@ namespace Theme {
             margin: 0 8px;
         }
         
-        /* Styled Text Edit */
+        /* Text Edit */
         QTextEdit {
             background-color: rgba(45, 37, 71, 0.5);
             color: #f3e8ff;
@@ -276,7 +262,7 @@ namespace Theme {
                                        stop:0 #1a0a1f, stop:1 #251e35);
         }
         
-        /* Radio Buttons with Glow */
+        /* Radio Buttons */
         QRadioButton {
             spacing: 8px;
             color: #c4b5fd;
@@ -299,10 +285,9 @@ namespace Theme {
         
         QRadioButton::indicator:hover {
             border: 2px solid #e879f9;
-            box-shadow: 0 0 8px rgba(232, 121, 249, 0.5);
         }
         
-        /* Combo Box Enhancement */
+        /* Combo Box */
         QComboBox {
             background-color: rgba(45, 37, 71, 0.8);
             color: #f3e8ff;
@@ -337,13 +322,12 @@ namespace Theme {
             padding: 4px;
         }
         
-        /* Custom object styles with animations */
+        /* Custom object styles */
         QLabel#imageTitle {
             font-size: 14pt;
             font-weight: 600;
             color: #e879f9;
             padding: 8px;
-            letter-spacing: 0.5px;
         }
         
         QLabel#processedTitle {
@@ -351,7 +335,6 @@ namespace Theme {
             font-weight: 600;
             color: #c026d3;
             padding: 8px;
-            letter-spacing: 0.5px;
         }
         
         QLabel#infoLabel {
@@ -380,7 +363,6 @@ namespace Theme {
         
         QWidget#imageContainer:hover {
             border: 2px solid rgba(232, 121, 249, 0.5);
-            box-shadow: 0 0 20px rgba(232, 121, 249, 0.2);
         }
         
         QWidget#processedContainer {
@@ -391,7 +373,6 @@ namespace Theme {
         
         QWidget#processedContainer:hover {
             border: 2px solid rgba(192, 38, 211, 0.6);
-            box-shadow: 0 0 20px rgba(192, 38, 211, 0.2);
         }
         
         /* Scrollbar Styling */
@@ -433,7 +414,7 @@ namespace Theme {
             background: #f0abfc;
         }
         
-        /* Tab Widget Enhancement */
+        /* Tab Widget */
         QTabWidget::pane {
             border: 2px solid rgba(232, 121, 249, 0.3);
             border-radius: 10px;
