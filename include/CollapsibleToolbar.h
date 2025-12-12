@@ -6,6 +6,7 @@
 #include <QVBoxLayout>
 #include <QPropertyAnimation>
 #include <QEasingCurve>
+#include <QIcon>
 #include <functional>
 
 class CollapsibleToolbar : public QWidget {
@@ -15,9 +16,9 @@ public:
     explicit CollapsibleToolbar(QWidget *parent = nullptr);
     ~CollapsibleToolbar();
 
-    // Add tool buttons
+    // Add tool buttons with icon support
     QPushButton* addTool(const QString& text, const QString& tooltip, 
-                        std::function<void()> callback, const QString& iconText = "");
+                        std::function<void()> callback, const QString& iconPath = "");
     void addSeparator();
     
     // Toolbar state

@@ -56,6 +56,7 @@
     <ClCompile Include="src\moc_NoiseRemovalDialog.cpp" />
     <ClCompile Include="src\CollapsibleToolbar.cpp" />
     <ClCompile Include="src\moc_CollapsibleToolbar.cpp" />
+    <ClCompile Include="src\qrc_icons.cpp" />
     <ClCompile Include="src\ROIShape.cpp" />
     <ClCompile Include="src\ROIManager.cpp" />
     <ClCompile Include="src\moc_ROIManager.cpp" />

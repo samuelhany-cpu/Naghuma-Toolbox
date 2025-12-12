@@ -270,25 +270,25 @@ void MainWindow::createCentralWidget() {
     leftToolbar = new CollapsibleToolbar(this);
     leftToolbar->setToolbarWidth(200);
     
-    // Add tools to toolbar with text-based icons instead of Unicode emojis
-    leftToolbar->addTool("Load Image", "Load an image file", [this]() { loadImage(); }, "📁");
-    leftToolbar->addTool("Save Image", "Save processed image", [this]() { saveImage(); }, "💾");
+    // Add tools to toolbar with SVG icons from resources
+    leftToolbar->addTool("Load Image", "Load an image file", [this]() { loadImage(); }, ":/icons/icons/load.svg");
+    leftToolbar->addTool("Save Image", "Save processed image", [this]() { saveImage(); }, ":/icons/icons/save.svg");
     leftToolbar->addSeparator();
     
-    leftToolbar->addTool("Reset", "Reset to original image", [this]() { resetImage(); }, "R");
-    leftToolbar->addTool("Undo", "Undo last operation", [this]() { undoLastOperation(); }, "U");
+    leftToolbar->addTool("Reset", "Reset to original image", [this]() { resetImage(); }, ":/icons/icons/reset.svg");
+    leftToolbar->addTool("Undo", "Undo last operation", [this]() { undoLastOperation(); }, ":/icons/icons/undo.svg");
     leftToolbar->addSeparator();
     
-    leftToolbar->addTool("Crop", "Toggle crop mode", [this]() { toggleCropMode(); }, "C");
-    leftToolbar->addTool("Transform", "Apply transformation", [this]() { applyRotation(); }, "T");
+    leftToolbar->addTool("Crop", "Toggle crop mode", [this]() { toggleCropMode(); }, ":/icons/icons/crop.svg");
+    leftToolbar->addTool("Transform", "Apply transformation", [this]() { applyRotation(); }, ":/icons/icons/transform.svg");
     leftToolbar->addSeparator();
     
-    leftToolbar->addTool("Enhance", "Auto enhance image", [this]() { applyAutoEnhancement(); }, "E");
-    leftToolbar->addTool("Denoise", "Remove noise", [this]() { applyNoiseRemoval(); }, "D");
+    leftToolbar->addTool("Enhance", "Auto enhance image", [this]() { applyAutoEnhancement(); }, ":/icons/icons/enhance.svg");
+    leftToolbar->addTool("Denoise", "Remove noise", [this]() { applyNoiseRemoval(); }, ":/icons/icons/denoise.svg");
     leftToolbar->addSeparator();
     
-    leftToolbar->addTool("Filters", "Apply filters", [this]() { applyGaussianBlur(); }, "F");
-    leftToolbar->addTool("Edges", "Edge detection", [this]() { applyEdgeDetection(); }, "G");
+    leftToolbar->addTool("Filters", "Apply filters", [this]() { applyGaussianBlur(); }, ":/icons/icons/filter.svg");
+    leftToolbar->addTool("Edges", "Edge detection", [this]() { applyEdgeDetection(); }, ":/icons/icons/edges.svg");
     
     mainLayout->addWidget(leftToolbar);
     

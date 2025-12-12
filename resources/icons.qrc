@@ -1,0 +1,17 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/icons">
+        <file>icons/load.svg</file>
+        <file>icons/save.svg</file>
+        <file>icons/reset.svg</file>
+        <file>icons/undo.svg</file>
+        <file>icons/crop.svg</file>
+        <file>icons/transform.svg</file>
+        <file>icons/enhance.svg</file>
+        <file>icons/denoise.svg</file>
+        <file>icons/filter.svg</file>
+        <file>icons/edges.svg</file>
+        <file>icons/menu.svg</file>
+        <file>icons/close.svg</file>
+    </qresource>
+</RCC>

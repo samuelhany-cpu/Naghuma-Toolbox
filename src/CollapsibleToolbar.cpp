@@ -34,9 +34,10 @@ void CollapsibleToolbar::setupUI() {
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
     
-    // Toggle button at top
+    // Toggle button at top with icon
     toggleButton = new QPushButton(this);
-    toggleButton->setText("?");  // Hamburger menu icon (triple bar)
+    toggleButton->setIcon(QIcon(":/icons/icons/menu.svg"));
+    toggleButton->setIconSize(QSize(24, 24));
     toggleButton->setToolTip("Expand/Collapse Toolbar");
     toggleButton->setFixedSize(50, 50);
     toggleButton->setStyleSheet(R"(
@@ -45,8 +46,6 @@ void CollapsibleToolbar::setupUI() {
             color: #e879f9;
             border: none;
             border-radius: 25px;
-            font-size: 24pt;
-            font-weight: bold;
             margin: 5px;
         }
         QPushButton:hover {
@@ -77,20 +76,23 @@ void CollapsibleToolbar::setupUI() {
 }
 
 QPushButton* CollapsibleToolbar::addTool(const QString& text, const QString& tooltip,
-                                         std::function<void()> callback, const QString& iconText) {
+                                         std::function<void()> callback, const QString& iconPath) {
     QPushButton *button = new QPushButton(this);
     
-    if (!iconText.isEmpty()) {
-        button->setText(iconText);
+    // Set icon if path provided
+    if (!iconPath.isEmpty()) {
+        QIcon icon(iconPath);
+        button->setIcon(icon);
+        button->setIconSize(QSize(20, 20));
         button->setToolTip(tooltip);
     } else {
-        button->setText(text.left(1));  // First letter as icon
+        button->setText(text.left(1));  // Fallback to first letter
         button->setToolTip(tooltip);
     }
     
     button->setFixedSize(50, 50);
     button->setProperty("fullText", text);
-    button->setProperty("iconText", iconText.isEmpty() ? text.left(1) : iconText);
+    button->setProperty("iconPath", iconPath);
     
     button->setStyleSheet(R"(
         QPushButton {
@@ -98,8 +100,6 @@ QPushButton* CollapsibleToolbar::addTool(const QString& text, const QString& too
             color: #c4b5fd;
             border: 1px solid rgba(91, 75, 115, 0.5);
             border-radius: 10px;
-            font-size: 16pt;
-            font-weight: bold;
         }
         QPushButton:hover {
             background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
@@ -145,7 +145,7 @@ void CollapsibleToolbar::setExpanded(bool expand) {
     if (expanded) {
         // Expand animation
         animateWidth(expandedWidth);
-        toggleButton->setText("×");  // Close icon (multiplication sign)
+        toggleButton->setIcon(QIcon(":/icons/icons/close.svg"));
         
         // Show full text on buttons with animation
         QTimer::singleShot(Theme::ANIMATION_NORMAL / 2, this, [this]() {
@@ -154,7 +154,7 @@ void CollapsibleToolbar::setExpanded(bool expand) {
     } else {
         // Collapse animation
         animateWidth(collapsedWidth);
-        toggleButton->setText("?");  // Hamburger icon (triple bar)
+        toggleButton->setIcon(QIcon(":/icons/icons/menu.svg"));
         
         // Show icons only
         updateButtonStyles();
@@ -175,11 +175,18 @@ void CollapsibleToolbar::animateWidth(int targetWidth) {
 
 void CollapsibleToolbar::updateButtonStyles() {
     for (QPushButton *button : toolButtons) {
+        QString iconPath = button->property("iconPath").toString();
+        
         if (expanded) {
-            // Show full text
+            // Show full text with icon
             QString fullText = button->property("fullText").toString();
             button->setText(fullText);
             button->setFixedSize(expandedWidth - 20, 45);
+            
+            if (!iconPath.isEmpty()) {
+                button->setIcon(QIcon(iconPath));
+                button->setIconSize(QSize(16, 16));
+            }
             
             button->setStyleSheet(R"(
                 QPushButton {
@@ -207,9 +214,13 @@ void CollapsibleToolbar::updateButtonStyles() {
             )");
         } else {
             // Show icon only
-            QString iconText = button->property("iconText").toString();
-            button->setText(iconText);
+            button->setText("");
             button->setFixedSize(50, 50);
+            
+            if (!iconPath.isEmpty()) {
+                button->setIcon(QIcon(iconPath));
+                button->setIconSize(QSize(20, 20));
+            }
             
             button->setStyleSheet(R"(
                 QPushButton {
@@ -217,8 +228,6 @@ void CollapsibleToolbar::updateButtonStyles() {
                     color: #c4b5fd;
                     border: 1px solid rgba(91, 75, 115, 0.5);
                     border-radius: 10px;
-                    font-size: 16pt;
-                    font-weight: bold;
                 }
                 QPushButton:hover {
                     background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
