@@ -17,6 +17,10 @@ public:
     static void equalizeHistogram(const cv::Mat& src, cv::Mat& dst);
     static void applyOtsuThreshold(const cv::Mat& src, cv::Mat& dst);
     
+    // Auto Enhancement
+    static void applyAdaptiveHistogramEqualization(const cv::Mat& src, cv::Mat& dst);
+    static void applyContrastStretching(const cv::Mat& src, cv::Mat& dst);
+    
     // Adjustments
     static void adjustBrightnessContrast(const cv::Mat& src, cv::Mat& dst, int brightness, int contrast);
     

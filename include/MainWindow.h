@@ -59,6 +59,9 @@ private slots:
     // Compression
     void applyCompression();
     
+    // Auto Enhancement
+    void applyAutoEnhancement();
+    
     // Histogram & Thresholding
     void showHistogram();
     void applyHistogramEqualization();

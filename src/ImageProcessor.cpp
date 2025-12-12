@@ -268,3 +268,68 @@ void ImageProcessor::rotate(const cv::Mat& src, cv::Mat& dst, double angle) {
 void ImageProcessor::zoom(const cv::Mat& src, cv::Mat& dst, double scale) {
     cv::resize(src, dst, cv::Size(), scale, scale, cv::INTER_LINEAR);
 }
+
+// ============================================================================
+// AUTO ENHANCEMENT ALGORITHMS
+// ============================================================================
+
+void ImageProcessor::applyAdaptiveHistogramEqualization(const cv::Mat& src, cv::Mat& dst) {
+    if (src.channels() == 3) {
+        // Convert to LAB color space for better results
+        cv::Mat lab;
+        cv::cvtColor(src, lab, cv::COLOR_BGR2Lab);
+        
+        // Split channels
+        std::vector<cv::Mat> labChannels;
+        cv::split(lab, labChannels);
+        
+        // Apply CLAHE (Contrast Limited Adaptive Histogram Equalization) to L channel
+        cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+        clahe->setClipLimit(2.0);
+        clahe->setTilesGridSize(cv::Size(8, 8));
+        clahe->apply(labChannels[0], labChannels[0]);
+        
+        // Merge channels back
+        cv::merge(labChannels, lab);
+        
+        // Convert back to BGR
+        cv::cvtColor(lab, dst, cv::COLOR_Lab2BGR);
+    } else {
+        // For grayscale images, apply CLAHE directly
+        cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+        clahe->setClipLimit(2.0);
+        clahe->setTilesGridSize(cv::Size(8, 8));
+        clahe->apply(src, dst);
+    }
+}
+
+void ImageProcessor::applyContrastStretching(const cv::Mat& src, cv::Mat& dst) {
+    if (src.channels() == 3) {
+        // Process each channel separately
+        std::vector<cv::Mat> channels;
+        cv::split(src, channels);
+        
+        for (int i = 0; i < 3; i++) {
+            double minVal, maxVal;
+            cv::minMaxLoc(channels[i], &minVal, &maxVal);
+            
+            // Apply contrast stretching formula: (pixel - min) * (255 / (max - min))
+            if (maxVal - minVal > 0) {
+                channels[i].convertTo(channels[i], CV_8U, 255.0 / (maxVal - minVal), -minVal * 255.0 / (maxVal - minVal));
+            }
+        }
+        
+        cv::merge(channels, dst);
+    } else {
+        // For grayscale
+        double minVal, maxVal;
+        cv::minMaxLoc(src, &minVal, &maxVal);
+        
+        // Apply contrast stretching
+        if (maxVal - minVal > 0) {
+            src.convertTo(dst, CV_8U, 255.0 / (maxVal - minVal), -minVal * 255.0 / (maxVal - minVal));
+        } else {
+            dst = src.clone();
+        }
+    }
+}

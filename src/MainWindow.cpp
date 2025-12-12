@@ -7,6 +7,7 @@
 #include "AdjustmentDialog.h"
 #include "CropTool.h"
 #include "CompressionDialog.h"
+#include "AutoEnhanceDialog.h"
 #include "filters/ImageFilters.h"
 #include "ImageMetrics.h"
 #include "Theme.h"
@@ -119,6 +120,8 @@ void MainWindow::createMenuBar() {
     // Process Menu
     QMenu *processMenu = menuBar->addMenu("Process");
     ADD_MENU_ACTION(processMenu, "Brightness/Contrast", applyBrightnessContrast);
+    processMenu->addSeparator();
+    ADD_MENU_ACTION(processMenu, "Auto Enhance...", applyAutoEnhancement);
     processMenu->addSeparator();
     ADD_MENU_ACTION(processMenu, "Grayscale", convertToGrayscale);
     ADD_MENU_ACTION(processMenu, "Binary Threshold", applyBinaryThreshold);
@@ -1170,6 +1173,55 @@ void MainWindow::applyCompression() {
         
         QString statusMsg = QString("Compression applied! Ratio: %1x, PSNR: %2 dB")
             .arg(dialog.getCompressionRatio(), 0, 'f', 2)
+            .arg(std::isinf(dialog.getPSNR()) ? QString("∞") : QString::number(dialog.getPSNR(), 'f', 2));
+        
+        updateDisplay();
+        updateStatus(statusMsg, "success");
+    }
+}
+
+void MainWindow::applyAutoEnhancement() {
+    if (!checkImageLoaded("apply auto enhancement")) return;
+    
+    AutoEnhanceDialog dialog(currentImage, this);
+    
+    if (dialog.exec() == QDialog::Accepted && dialog.wasApplied()) {
+        processedImage = dialog.getEnhancedImage();
+        recentlyProcessed = true;
+        
+        // Store algorithm type
+        QString algorithmType = dialog.getAlgorithmType();
+        
+        // Create operation function based on algorithm type
+        auto operation = [algorithmType](const cv::Mat& input) -> cv::Mat {
+            cv::Mat result;
+            if (algorithmType == "Adaptive Histogram") {
+                ImageProcessor::applyAdaptiveHistogramEqualization(input, result);
+            } else {
+                ImageProcessor::applyContrastStretching(input, result);
+            }
+            return result;
+        };
+        
+        if (!processedImage.empty()) {
+            currentImage = processedImage.clone();
+            
+            QString layerName;
+            if (algorithmType == "Adaptive Histogram") {
+                layerName = QString("Auto Enhance: CLAHE (PSNR:%1dB)")
+                    .arg(std::isinf(dialog.getPSNR()) ? QString("∞") : QString::number(dialog.getPSNR(), 'f', 1));
+            } else {
+                layerName = QString("Auto Enhance: Contrast (PSNR:%1dB)")
+                    .arg(std::isinf(dialog.getPSNR()) ? QString("∞") : QString::number(dialog.getPSNR(), 'f', 1));
+            }
+            
+            rightSidebar->addLayer(layerName, "enhancement", processedImage, operation);
+            rightSidebar->updateHistogram(processedImage);
+            updateUndoButtonState();
+        }
+        
+        QString statusMsg = QString("Auto enhancement applied! Algorithm: %1, PSNR: %2 dB")
+            .arg(algorithmType == "Adaptive Histogram" ? "CLAHE" : "Contrast Stretching")
             .arg(std::isinf(dialog.getPSNR()) ? QString("∞") : QString::number(dialog.getPSNR(), 'f', 2));
         
         updateDisplay();
