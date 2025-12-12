@@ -68,12 +68,13 @@ void CollapsibleToolbar::setupUI() {
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
     
-    // Toggle button at top with Font Awesome icon
+    // Toggle button at top with simple icon
     toggleButton = new QPushButton(this);
-    QFont btnFont = iconFont;
-    btnFont.setPixelSize(20);
+    
+    // Use simple mathematical symbol that works everywhere
+    QFont btnFont("Arial", 16, QFont::Bold);
     toggleButton->setFont(btnFont);
-    toggleButton->setText(QChar(0xf0c9)); // bars icon - use QChar constructor
+    toggleButton->setText("?");  // Triple bar / hamburger menu
     toggleButton->setToolTip("Expand/Collapse Toolbar");
     toggleButton->setFixedSize(50, 50);
     toggleButton->setStyleSheet(R"(
@@ -90,8 +91,6 @@ void CollapsibleToolbar::setupUI() {
             background-color: rgba(232, 121, 249, 0.5);
         }
     )");
-    
-    qDebug() << "Toggle button icon:" << toggleButton->text().toUtf8().toHex();
     
     connect(toggleButton, &QPushButton::clicked, this, &CollapsibleToolbar::toggleExpanded);
     mainLayout->addWidget(toggleButton, 0, Qt::AlignHCenter);
@@ -117,16 +116,14 @@ QPushButton* CollapsibleToolbar::addTool(const QString& text, const QString& too
                                          std::function<void()> callback, const QString& iconCode) {
     QPushButton *button = new QPushButton(this);
     
-    // Set Font Awesome icon using QChar with hex code
-    if (!iconCode.isEmpty() && iconCode.length() == 1) {
-        QFont btnFont = iconFont;
-        btnFont.setPixelSize(18);
+    // Use simple text icons (single letters)
+    if (!iconCode.isEmpty()) {
+        QFont btnFont("Arial", 14, QFont::Bold);
         button->setFont(btnFont);
         button->setText(iconCode);
         button->setToolTip(tooltip);
         
-        qDebug() << "Button" << text << "- Icon code:" << iconCode.toUtf8().toHex() 
-                 << "Font:" << btnFont.family();
+        qDebug() << "Button" << text << "- Icon:" << iconCode;
     } else {
         button->setText(text.left(1));  // Fallback to first letter
         button->setToolTip(tooltip);
@@ -188,7 +185,7 @@ void CollapsibleToolbar::setExpanded(bool expand) {
     if (expanded) {
         // Expand animation
         animateWidth(expandedWidth);
-        toggleButton->setText(QChar(0xf00d)); // times/close icon
+        toggleButton->setText("×");  // Multiplication sign for close
         
         // Show full text on buttons with animation
         QTimer::singleShot(Theme::ANIMATION_NORMAL / 2, this, [this]() {
@@ -197,7 +194,7 @@ void CollapsibleToolbar::setExpanded(bool expand) {
     } else {
         // Collapse animation
         animateWidth(collapsedWidth);
-        toggleButton->setText(QChar(0xf0c9)); // bars icon
+        toggleButton->setText("?");  // Triple bar for menu
         
         // Show icons only
         updateButtonStyles();
