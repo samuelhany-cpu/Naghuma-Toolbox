@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -76,6 +76,7 @@
     <ClCompile Include="src\moc_RightSidebarWidget.cpp" />
     <ClCompile Include="src\moc_LayerManager.cpp" />
     <ClCompile Include="src\moc_AdjustmentDialog.cpp" />
+    <ClCompile Include="src\qrc_fonts.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\MainWindow.h" />

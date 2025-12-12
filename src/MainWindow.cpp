@@ -270,25 +270,25 @@ void MainWindow::createCentralWidget() {
     leftToolbar = new CollapsibleToolbar(this);
     leftToolbar->setToolbarWidth(200);
     
-    // Add tools to toolbar with SVG icons from resources
-    leftToolbar->addTool("Load Image", "Load an image file", [this]() { loadImage(); }, ":/icons/icons/load.svg");
-    leftToolbar->addTool("Save Image", "Save processed image", [this]() { saveImage(); }, ":/icons/icons/save.svg");
+    // Add tools to toolbar with Font Awesome 6 icons (Unicode codes)
+    leftToolbar->addTool("Load Image", "Load an image file", [this]() { loadImage(); }, QString::fromUtf8("\uf07c"));  // folder-open
+    leftToolbar->addTool("Save Image", "Save processed image", [this]() { saveImage(); }, QString::fromUtf8("\uf0c7"));  // save/floppy-disk
     leftToolbar->addSeparator();
     
-    leftToolbar->addTool("Reset", "Reset to original image", [this]() { resetImage(); }, ":/icons/icons/reset.svg");
-    leftToolbar->addTool("Undo", "Undo last operation", [this]() { undoLastOperation(); }, ":/icons/icons/undo.svg");
+    leftToolbar->addTool("Reset", "Reset to original image", [this]() { resetImage(); }, QString::fromUtf8("\uf2ea"));  // rotate-left
+    leftToolbar->addTool("Undo", "Undo last operation", [this]() { undoLastOperation(); }, QString::fromUtf8("\uf0e2"));  // undo
     leftToolbar->addSeparator();
     
-    leftToolbar->addTool("Crop", "Toggle crop mode", [this]() { toggleCropMode(); }, ":/icons/icons/crop.svg");
-    leftToolbar->addTool("Transform", "Apply transformation", [this]() { applyRotation(); }, ":/icons/icons/transform.svg");
+    leftToolbar->addTool("Crop", "Toggle crop mode", [this]() { toggleCropMode(); }, QString::fromUtf8("\uf125"));  // crop
+    leftToolbar->addTool("Transform", "Apply transformation", [this]() { applyRotation(); }, QString::fromUtf8("\uf2f1"));  // rotate
     leftToolbar->addSeparator();
     
-    leftToolbar->addTool("Enhance", "Auto enhance image", [this]() { applyAutoEnhancement(); }, ":/icons/icons/enhance.svg");
-    leftToolbar->addTool("Denoise", "Remove noise", [this]() { applyNoiseRemoval(); }, ":/icons/icons/denoise.svg");
+    leftToolbar->addTool("Enhance", "Auto enhance image", [this]() { applyAutoEnhancement(); }, QString::fromUtf8("\uf005"));  // star
+    leftToolbar->addTool("Denoise", "Remove noise", [this]() { applyNoiseRemoval(); }, QString::fromUtf8("\uf130"));  // microphone
     leftToolbar->addSeparator();
     
-    leftToolbar->addTool("Filters", "Apply filters", [this]() { applyGaussianBlur(); }, ":/icons/icons/filter.svg");
-    leftToolbar->addTool("Edges", "Edge detection", [this]() { applyEdgeDetection(); }, ":/icons/icons/edges.svg");
+    leftToolbar->addTool("Filters", "Apply filters", [this]() { applyGaussianBlur(); }, QString::fromUtf8("\uf0b0"));  // filter
+    leftToolbar->addTool("Edges", "Edge detection", [this]() { applyEdgeDetection(); }, QString::fromUtf8("\uf0e7"));  // bolt/lightning
     
     mainLayout->addWidget(leftToolbar);
     
@@ -2058,9 +2058,9 @@ void MainWindow::onZoomChanged(double level) {
     zoomLabel->setText(QString("%1%").arg(percent));
 }
 
-// ============================================================================
+// ================================================================================
 // KEYBOARD EVENT HANDLING
-// ============================================================================
+// ================================================================================
 
 void MainWindow::keyPressEvent(QKeyEvent *event) {
     // Handle Zoom shortcuts
