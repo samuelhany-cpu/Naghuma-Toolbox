@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -46,14 +46,14 @@
     <ClCompile Include="src\MainWindow.cpp" />
     <ClCompile Include="src\ImageCanvas.cpp" />
     <ClCompile Include="src\ImageProcessor.cpp" />
-    <ClCompile Include="src\CropTool.cpp" />
-    <ClCompile Include="src\moc_CropTool.cpp" />
     <ClCompile Include="src\HistogramWidget.cpp" />
     <ClCompile Include="src\TransformDialog.cpp" />
     <ClCompile Include="src\RightSidebarWidget.cpp" />
     <ClCompile Include="src\LayerManager.cpp" />
     <ClCompile Include="src\ImageMetrics.cpp" />
     <ClCompile Include="src\AdjustmentDialog.cpp" />
+    <ClCompile Include="src\BrushTool.cpp" />
+    <ClCompile Include="src\BrushDialog.cpp" />
     <ClCompile Include="lib\filters\ImageFilters.cpp" />
     <ClCompile Include="src\moc_MainWindow.cpp" />
     <ClCompile Include="src\moc_ImageCanvas.cpp" />
@@ -62,26 +62,53 @@
     <ClCompile Include="src\moc_RightSidebarWidget.cpp" />
     <ClCompile Include="src\moc_LayerManager.cpp" />
     <ClCompile Include="src\moc_AdjustmentDialog.cpp" />
+    <ClCompile Include="src\moc_BrushTool.cpp" />
+    <ClCompile Include="src\moc_BrushDialog.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\MainWindow.h" />
     <ClInclude Include="include\ImageCanvas.h" />
     <ClInclude Include="include\ImageProcessor.h" />
-    <ClInclude Include="include\CropTool.h" />
     <ClInclude Include="include\HistogramWidget.h" />
+    <ClInclude Include="include\MainWindow_Macros.h" />
+    <ClInclude Include="include\Theme.h" />
     <ClInclude Include="include\TransformDialog.h" />
     <ClInclude Include="include\RightSidebarWidget.h" />
     <ClInclude Include="include\LayerManager.h" />
     <ClInclude Include="include\ImageMetrics.h" />
     <ClInclude Include="include\AdjustmentDialog.h" />
+    <ClInclude Include="include\BrushTool.h" />
+    <ClInclude Include="include\BrushDialog.h" />
     <ClInclude Include="include\filters\ImageFilters.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="ACTIONABLE_CHECKLIST.md" />
+    <None Include="COMPLETE_FIX_GUIDE.md" />
+    <None Include="DIRECTORY_STRUCTURE_FIXED.md" />
+    <None Include="docs\AGGRESSIVE_REDUCTION.md" />
+    <None Include="docs\MODULARIZATION_PLAN.md" />
+    <None Include="docs\REFACTORING_IMPLEMENTATION.md" />
+    <None Include="docs\SIMPLE_REFACTORING.md" />
+    <None Include="docs\STRUCTURE_VISUAL.md" />
+    <None Include="FINAL_3_CHANGES.md" />
+    <None Include="FINAL_SOLUTION_README.md" />
+    <None Include="FIX_ALL.ps1" />
+    <None Include="FIX_RELEASE_CONFIG.md" />
     <None Include="QUICK_FIX.md" />
+    <None Include="QUICK_REFACTORING_CARD.md" />
+    <None Include="REFACTORING_STATUS.md" />
+    <None Include="REFACTORING_SUMMARY.md" />
     <None Include="scripts\add_new_files.ps1" />
+    <None Include="scripts\add_release_config.ps1" />
+    <None Include="scripts\fix_output_dirs.ps1" />
+    <None Include="scripts\fix_processedInfoLabel.ps1" />
+    <None Include="START_HERE.md" />
+    <None Include="ULTRA_AGGRESSIVE_GUIDE.md" />
+    <None Include="VISUAL_FIX_SUMMARY.md" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="FIX_DRAWING_CRASH.txt" />
+    <Text Include="MANUAL_FIX_DUPLICATE.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

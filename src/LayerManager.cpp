@@ -52,10 +52,22 @@ cv::Mat LayerManager::rebuildFromLayers(const cv::Mat& original, int upToLayer) 
     
     for (int i = 0; i < endLayer; ++i) {
         if (layers[i].operation) {
-            result = layers[i].operation(result);
+            // Use the operation function to replay the transformation
+            try {
+                result = layers[i].operation(result);
+            } catch (...) {
+                // If operation fails (e.g., due to dimension mismatch), fall back to stored image
+                result = layers[i].image.clone();
+            }
         } else {
             // Fallback: use stored image if operation not available
+            // This handles operations that can't be replayed (e.g., after dimension changes)
             result = layers[i].image.clone();
+        }
+        
+        // If result is empty after operation, stop rebuilding
+        if (result.empty()) {
+            break;
         }
     }
     

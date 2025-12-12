@@ -10,11 +10,13 @@
 #include <QToolBar>
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QKeyEvent>
 #include <opencv2/opencv.hpp>
+#include <functional>
 
 class ImageCanvas;
 class RightSidebarWidget;
-class BrushTool;
+class CropTool;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -29,6 +31,7 @@ private slots:
     void saveImage();
     void resetImage();
     void useProcessedImage();
+    void undoLastOperation();  // NEW: Undo functionality
     
     // Information
     void showImageInfo();
@@ -44,6 +47,14 @@ private slots:
     void applyFlipX();
     void applyFlipY();
     void applyFlipXY();
+    
+    // Crop Tool
+    void toggleCropMode();
+    void applyCrop();
+    void cancelCrop();
+    void onCropMousePress(const QPoint& pos);
+    void onCropMouseMove(const QPoint& pos);
+    void onCropMouseRelease(const QPoint& pos);
     
     // Histogram & Thresholding
     void showHistogram();
@@ -78,29 +89,37 @@ private slots:
     void applyHighPassFilter();
     void showFFTSpectrum();
     
-    // Brush Tool
-    void showBrushSettings();
-    void applyBrushEffect();
-    void toggleDrawingMode();
-    void onCanvasMousePress(const QPoint& pos);
-    void onCanvasMouseMove(const QPoint& pos);
-    void onCanvasMouseRelease(const QPoint& pos);
-    
     // Layer management
     void onLayerRemoveRequested(int layerIndex);
     void onLayersRemoveRequested(const QList<int>& layerIndices);
+    void updateUndoButtonState();  // NEW: Update undo button enabled state
 
 private:
+    // UI Setup
     void setupUI();
     void createMenuBar();
     void createToolBar();
     void createCentralWidget();
     void createStatusBar();
     
+    // Event handlers
+    void keyPressEvent(QKeyEvent *event) override;
+    
+    // Helper Functions
     void updateDisplay();
     void updateStatus(const QString& message, const QString& type = "info", int progress = -1);
     void finalizeProcessing(const QString& layerName, const QString& layerType);
     void updateMetricsDisplay();
+    
+    // Common Operation Helpers
+    bool checkImageLoaded(const QString& operation = "perform this operation");
+    void applySimpleFilter(
+        std::function<void(const cv::Mat&, cv::Mat&)> filterFunc,
+        std::function<cv::Mat(const cv::Mat&)> operationFunc,
+        const QString& layerName,
+        const QString& layerType,
+        const QString& successMessage
+    );
 
     // UI Components
     ImageCanvas *originalCanvas;
@@ -114,12 +133,7 @@ private:
     
     RightSidebarWidget *rightSidebar;
     
-    // Brush Tool
-    BrushTool *brushTool;
-    
-    // Drawing mode
-    bool drawingMode;
-    cv::Mat drawingCanvas;
+    QPushButton *undoButton;  // NEW: Undo button reference
     
     // Image data
     cv::Mat originalImage;
@@ -130,6 +144,11 @@ private:
     // Processing state
     bool imageLoaded;
     bool recentlyProcessed;
+    
+    // Crop tool
+    CropTool *cropTool;
+    bool cropMode;
+    cv::Mat cropPreviewImage;
 };
 
 #endif // MAINWINDOW_H

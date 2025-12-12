@@ -5,10 +5,11 @@
 #include "ImageProcessor.h"
 #include "TransformDialog.h"
 #include "AdjustmentDialog.h"
-#include "BrushTool.h"
-#include "BrushDialog.h"
+#include "CropTool.h"
 #include "filters/ImageFilters.h"
 #include "ImageMetrics.h"
+#include "Theme.h"
+#include "MainWindow_Macros.h"
 #include <QApplication>
 #include <QScreen>
 #include <QVBoxLayout>
@@ -16,194 +17,17 @@
 #include <QHBoxLayout>
 #include <algorithm>
 
-namespace Theme {
-    constexpr const char* BG_PRIMARY = "#1a0a1f";
-    constexpr const char* BG_SECONDARY = "#1f1535";
-    constexpr const char* FG_PRIMARY = "#f3e8ff";
-    constexpr const char* FG_SECONDARY = "#c4b5fd";
-    constexpr const char* ACCENT_PRIMARY = "#e879f9";
-    constexpr const char* ACCENT_SECONDARY = "#c026d3";
-    constexpr const char* SUCCESS_COLOR = "#98d8e8";
-    constexpr const char* INFO_COLOR = "#c4b5fd";
-    constexpr const char* WARNING_COLOR = "#fb7185";
-    constexpr const char* ERROR_COLOR = "#f87171";
-}
-
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), imageLoaded(false), recentlyProcessed(false), drawingMode(false) {
+    : QMainWindow(parent), imageLoaded(false), recentlyProcessed(false), cropMode(false) {
     
     setWindowTitle("Naghuma Toolbox - Image Processing Suite");
     setMinimumSize(1600, 900);
     
-    // Initialize brush tool
-    brushTool = new BrushTool(this);
-    
-    QString styleSheet = R"(
-        QMainWindow {
-            background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                                       stop:0 #1a0a1f, stop:0.3 #251e35, 
-                                       stop:0.7 #1f1535, stop:1 #1a0a1f);
-        }
-        QWidget {
-            background-color: #1f1535;
-            color: #f3e8ff;
-            font-family: 'Segoe UI', -apple-system, sans-serif;
-            font-size: 10pt;
-        }
-        QPushButton {
-            background-color: rgba(45, 37, 71, 0.8);
-            color: #c4b5fd;
-            border: 1px solid rgba(61, 50, 80, 0.6);
-            border-radius: 10px;
-            padding: 12px 24px;
-            font-weight: 500;
-        }
-        QPushButton:hover {
-            background-color: rgba(91, 75, 115, 0.6);
-            color: #e879f9;
-            border: 1px solid rgba(232, 121, 249, 0.5);
-        }
-        QPushButton:pressed {
-            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                                       stop:0 #e879f9, stop:1 #c026d3);
-            color: #ffffff;
-            border: none;
-        }
-        QPushButton.accent {
-            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                                       stop:0 #e879f9, stop:1 #c026d3);
-            color: #ffffff;
-            font-weight: 600;
-            border: none;
-            padding: 12px 28px;
-        }
-        QPushButton.accent:hover {
-            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                                       stop:0 #f0abfc, stop:1 #e879f9);
-        }
-        QLineEdit, QSpinBox, QDoubleSpinBox {
-            background-color: rgba(45, 37, 71, 0.5);
-            color: #f3e8ff;
-            border: 2px solid rgba(91, 75, 115, 0.5);
-            border-radius: 8px;
-            padding: 10px 14px;
-        }
-        QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {
-            border: 2px solid #e879f9;
-            background-color: rgba(232, 121, 249, 0.08);
-        }
-        QSlider::groove:horizontal {
-            background: rgba(45, 37, 71, 0.6);
-            height: 10px;
-            border-radius: 5px;
-        }
-        QSlider::handle:horizontal {
-            background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                                       stop:0 #e879f9, stop:1 #c026d3);
-            width: 22px;
-            height: 22px;
-            margin: -6px 0;
-            border-radius: 11px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-        }
-        QSlider::handle:horizontal:hover {
-            background: #f0abfc;
-        }
-        QProgressBar {
-            background-color: rgba(45, 37, 71, 0.6);
-            border: none;
-            border-radius: 8px;
-            height: 14px;
-            text-align: center;
-            color: #ffffff;
-            font-weight: 500;
-        }
-        QProgressBar::chunk {
-            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                                       stop:0 #e879f9, stop:1 #c026d3);
-            border-radius: 8px;
-        }
-        QLabel {
-            background-color: transparent;
-            color: #c4b5fd;
-        }
-        QGroupBox {
-            border: 2px solid rgba(232, 121, 249, 0.35);
-            border-radius: 14px;
-            margin-top: 22px;
-            padding: 24px 20px 20px 20px;
-            font-weight: 600;
-            color: #e879f9;
-            background-color: rgba(45, 37, 71, 0.25);
-        }
-        QGroupBox::title {
-            subcontrol-origin: margin;
-            subcontrol-position: top left;
-            padding: 0 16px;
-            background-color: #1f1535;
-            font-size: 11pt;
-        }
-        QStatusBar {
-            background: rgba(26, 10, 31, 0.95);
-            color: #f3e8ff;
-            border-top: 2px solid rgba(232, 121, 249, 0.25);
-            padding: 6px;
-        }
-        QMenuBar {
-            background: rgba(31, 21, 53, 0.95);
-            color: #f3e8ff;
-            spacing: 6px;
-            padding: 10px 8px;
-            border-bottom: 2px solid rgba(232, 121, 249, 0.25);
-        }
-        QMenuBar::item {
-            padding: 10px 20px;
-            background: transparent;
-            border-radius: 8px;
-        }
-        QMenuBar::item:selected {
-            background-color: rgba(232, 121, 249, 0.15);
-            color: #e879f9;
-        }
-        QMenu {
-            background-color: rgba(37, 30, 53, 0.98);
-            border: 2px solid rgba(91, 75, 115, 0.5);
-            border-radius: 12px;
-            padding: 10px;
-        }
-        QMenu::item {
-            padding: 12px 40px;
-            color: #f3e8ff;
-            border-radius: 8px;
-        }
-        QMenu::item:selected {
-            background-color: rgba(232, 121, 249, 0.2);
-            color: #e879f9;
-        }
-        QToolBar {
-            background: rgba(26, 10, 31, 0.95);
-            border-bottom: 2px solid rgba(232, 121, 249, 0.25);
-            spacing: 12px;
-            padding: 14px;
-        }
-        QTextEdit {
-            background-color: rgba(45, 37, 71, 0.5);
-            color: #f3e8ff;
-            border: 2px solid rgba(91, 75, 115, 0.5);
-            border-radius: 10px;
-            padding: 14px;
-        }
-        QMessageBox {
-            background-color: #1f1535;
-        }
-        QDialog {
-            background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                                       stop:0 #1a0a1f, stop:1 #251e35);
-        }
-    )";
+    // Initialize crop tool
+    cropTool = new CropTool(this);
     
     QApplication::setStyle("Fusion");
-    setStyleSheet(styleSheet);
+    setStyleSheet(Theme::MAIN_STYLESHEET);
     
     setupUI();
 }
@@ -245,173 +69,87 @@ void MainWindow::createMenuBar() {
     
     // File Menu
     QMenu *fileMenu = menuBar->addMenu("File");
+    ADD_MENU_ACTION(fileMenu, "Load Image", loadImage);
+    ADD_MENU_ACTION(fileMenu, "Save Image", saveImage);
+    fileMenu->addSeparator();
+    ADD_MENU_ACTION(fileMenu, "Reset", resetImage);
     
-    QAction *loadAction = fileMenu->addAction("Load Image");
-    connect(loadAction, &QAction::triggered, this, &MainWindow::loadImage);
-    
-    QAction *saveAction = fileMenu->addAction("Save Image");
-    connect(saveAction, &QAction::triggered, this, &MainWindow::saveImage);
+    // Add Undo action with Ctrl+Z shortcut
+    QAction *undoAction = fileMenu->addAction("Undo");
+    undoAction->setShortcut(QKeySequence::Undo);  // Ctrl+Z
+    connect(undoAction, &QAction::triggered, this, &MainWindow::undoLastOperation);
     
     fileMenu->addSeparator();
-    
-    QAction *resetAction = fileMenu->addAction("Reset");
-    connect(resetAction, &QAction::triggered, this, &MainWindow::resetImage);
-    
-    fileMenu->addSeparator();
-    
-    QAction *exitAction = fileMenu->addAction("Exit");
-    connect(exitAction, &QAction::triggered, this, &QMainWindow::close);
+    ADD_MENU_ACTION(fileMenu, "Exit", close);
     
     // Info Menu
     QMenu *infoMenu = menuBar->addMenu("Information");
-    
-    QAction *imageInfoAction = infoMenu->addAction("Image Info");
-    connect(imageInfoAction, &QAction::triggered, this, &MainWindow::showImageInfo);
-    
-    QAction *pixelInfoAction = infoMenu->addAction("Pixel Info");
-    connect(pixelInfoAction, &QAction::triggered, this, &MainWindow::showPixelInfo);
-    
-    QAction *statsAction = infoMenu->addAction("Statistics");
-    connect(statsAction, &QAction::triggered, this, &MainWindow::showImageStats);
-    
+    ADD_MENU_ACTION(infoMenu, "Image Info", showImageInfo);
+    ADD_MENU_ACTION(infoMenu, "Pixel Info", showPixelInfo);
+    ADD_MENU_ACTION(infoMenu, "Statistics", showImageStats);
     infoMenu->addSeparator();
-    
-    QAction *metricsAction = infoMenu->addAction("Image Metrics (RMSE/SNR/PSNR)");
-    connect(metricsAction, &QAction::triggered, this, &MainWindow::showImageMetrics);
+    ADD_MENU_ACTION(infoMenu, "Image Metrics (RMSE/SNR/PSNR)", showImageMetrics);
     
     // Transform Menu
     QMenu *transformMenu = menuBar->addMenu("Transform");
-    
-    QAction *translateAction = transformMenu->addAction("Translation");
-    connect(translateAction, &QAction::triggered, this, &MainWindow::applyTranslation);
-    
-    QAction *rotateAction = transformMenu->addAction("Rotation");
-    connect(rotateAction, &QAction::triggered, this, &MainWindow::applyRotation);
-    
-    QAction *skewAction = transformMenu->addAction("Skew");
-    connect(skewAction, &QAction::triggered, this, &MainWindow::applySkew);
-    
-    QAction *zoomAction = transformMenu->addAction("Zoom");
-    connect(zoomAction, &QAction::triggered, this, &MainWindow::applyZoom);
-    
+    ADD_MENU_ACTION(transformMenu, "Translation", applyTranslation);
+    ADD_MENU_ACTION(transformMenu, "Rotation", applyRotation);
+    ADD_MENU_ACTION(transformMenu, "Skew", applySkew);
+    ADD_MENU_ACTION(transformMenu, "Zoom", applyZoom);
+    transformMenu->addSeparator();
+    ADD_MENU_ACTION(transformMenu, "Flip Horizontal", applyFlipX);
+    ADD_MENU_ACTION(transformMenu, "Flip Vertical", applyFlipY);
+    ADD_MENU_ACTION(transformMenu, "Flip Both", applyFlipXY);
     transformMenu->addSeparator();
     
-    QAction *flipXAction = transformMenu->addAction("Flip Horizontal");
-    connect(flipXAction, &QAction::triggered, this, &MainWindow::applyFlipX);
-    
-    QAction *flipYAction = transformMenu->addAction("Flip Vertical");
-    connect(flipYAction, &QAction::triggered, this, &MainWindow::applyFlipY);
-    
-    QAction *flipXYAction = transformMenu->addAction("Flip Both");
-    connect(flipXYAction, &QAction::triggered, this, &MainWindow::applyFlipXY);
-    
+    // Crop submenu
+    QAction *cropModeAction = transformMenu->addAction("Toggle Crop Mode");
+    cropModeAction->setCheckable(true);
+    connect(cropModeAction, &QAction::triggered, this, &MainWindow::toggleCropMode);
+    ADD_MENU_ACTION(transformMenu, "Apply Crop", applyCrop);
+    ADD_MENU_ACTION(transformMenu, "Cancel Crop", cancelCrop);
+
     // Histogram Menu
     QMenu *histMenu = menuBar->addMenu("Histogram");
-    
-    QAction *showHistAction = histMenu->addAction("Show Histogram");
-    connect(showHistAction, &QAction::triggered, this, &MainWindow::showHistogram);
-    
-    QAction *equalizeAction = histMenu->addAction("Equalization");
-    connect(equalizeAction, &QAction::triggered, this, &MainWindow::applyHistogramEqualization);
-    
-    QAction *otsuAction = histMenu->addAction("Otsu Thresholding");
-    connect(otsuAction, &QAction::triggered, this, &MainWindow::applyOtsuThresholding);
+    ADD_MENU_ACTION(histMenu, "Show Histogram", showHistogram);
+    ADD_MENU_ACTION(histMenu, "Equalization", applyHistogramEqualization);
+    ADD_MENU_ACTION(histMenu, "Otsu Thresholding", applyOtsuThresholding);
     
     // Process Menu
     QMenu *processMenu = menuBar->addMenu("Process");
-    
-    QAction *brightnessContrastAction = processMenu->addAction("Brightness/Contrast");
-    connect(brightnessContrastAction, &QAction::triggered, this, &MainWindow::applyBrightnessContrast);
-    
+    ADD_MENU_ACTION(processMenu, "Brightness/Contrast", applyBrightnessContrast);
     processMenu->addSeparator();
+    ADD_MENU_ACTION(processMenu, "Grayscale", convertToGrayscale);
+    ADD_MENU_ACTION(processMenu, "Binary Threshold", applyBinaryThreshold);
+    ADD_MENU_ACTION(processMenu, "Gaussian Blur", applyGaussianBlur);
+    ADD_MENU_ACTION(processMenu, "Edge Detection", applyEdgeDetection);
+    ADD_MENU_ACTION(processMenu, "Invert Colors", invertColors);
     
-    QAction *grayscaleAction = processMenu->addAction("Grayscale");
-    connect(grayscaleAction, &QAction::triggered, this, &MainWindow::convertToGrayscale);
-    
-    QAction *binaryAction = processMenu->addAction("Binary Threshold");
-    connect(binaryAction, &QAction::triggered, this, &MainWindow::applyBinaryThreshold);
-    
-    QAction *blurAction = processMenu->addAction("Gaussian Blur");
-    connect(blurAction, &QAction::triggered, this, &MainWindow::applyGaussianBlur);
-    
-    QAction *edgeAction = processMenu->addAction("Edge Detection");
-    connect(edgeAction, &QAction::triggered, this, &MainWindow::applyEdgeDetection);
-    
-    QAction *invertAction = processMenu->addAction("Invert Colors");
-    connect(invertAction, &QAction::triggered, this, &MainWindow::invertColors);
-    
-    // Filters Menu - Professional Library Integration
+    // Filters Menu
     QMenu *filtersMenu = menuBar->addMenu("Filters");
-    
-    // Add filters from the lab code
-    QAction *laplacianAction = filtersMenu->addAction("Laplacian Filter");
-    connect(laplacianAction, &QAction::triggered, this, &MainWindow::applyLaplacianFilter);
-    
-    QAction *sobelAction = filtersMenu->addAction("Sobel Filter");
-    connect(sobelAction, &QAction::triggered, this, &MainWindow::applySobelCombinedFilter);
-    
-    QAction *traditionalAction = filtersMenu->addAction("Traditional Filter");
-    connect(traditionalAction, &QAction::triggered, this, &MainWindow::applyTraditionalFilter);
-    
-    QAction *pyramidalAction = filtersMenu->addAction("Pyramidal Filter");
-    connect(pyramidalAction, &QAction::triggered, this, &MainWindow::applyPyramidalFilter);
-    
-    QAction *circularAction = filtersMenu->addAction("Circular Filter");
-    connect(circularAction, &QAction::triggered, this, &MainWindow::applyCircularFilter);
-    
-    QAction *coneAction = filtersMenu->addAction("Cone Filter");
-    connect(coneAction, &QAction::triggered, this, &MainWindow::applyConeFilter);
+    ADD_MENU_ACTION(filtersMenu, "Laplacian Filter", applyLaplacianFilter);
+    ADD_MENU_ACTION(filtersMenu, "Sobel Filter", applySobelCombinedFilter);
+    ADD_MENU_ACTION(filtersMenu, "Traditional Filter", applyTraditionalFilter);
+    ADD_MENU_ACTION(filtersMenu, "Pyramidal Filter", applyPyramidalFilter);
+    ADD_MENU_ACTION(filtersMenu, "Circular Filter", applyCircularFilter);
+    ADD_MENU_ACTION(filtersMenu, "Cone Filter", applyConeFilter);
     
     // Morphology Menu
     QMenu *morphMenu = menuBar->addMenu("Morphology");
-    
-    QAction *erosionAction = morphMenu->addAction("Erosion");
-    connect(erosionAction, &QAction::triggered, this, &MainWindow::applyErosion);
-    
-    QAction *dilationAction = morphMenu->addAction("Dilation");
-    connect(dilationAction, &QAction::triggered, this, &MainWindow::applyDilation);
-    
+    ADD_MENU_ACTION(morphMenu, "Erosion", applyErosion);
+    ADD_MENU_ACTION(morphMenu, "Dilation", applyDilation);
     morphMenu->addSeparator();
-    
-    QAction *openingAction = morphMenu->addAction("Opening");
-    connect(openingAction, &QAction::triggered, this, &MainWindow::applyOpening);
-    
-    QAction *closingAction = morphMenu->addAction("Closing");
-    connect(closingAction, &QAction::triggered, this, &MainWindow::applyClosing);
-    
+    ADD_MENU_ACTION(morphMenu, "Opening", applyOpening);
+    ADD_MENU_ACTION(morphMenu, "Closing", applyClosing);
     morphMenu->addSeparator();
-    
-    QAction *gradientAction = morphMenu->addAction("Morphological Gradient");
-    connect(gradientAction, &QAction::triggered, this, &MainWindow::applyMorphGradient);
+    ADD_MENU_ACTION(morphMenu, "Morphological Gradient", applyMorphGradient);
     
     // FFT Menu
     QMenu *fftMenu = menuBar->addMenu("FFT");
-    
-    QAction *fftSpectrumAction = fftMenu->addAction("Show FFT Spectrum");
-    connect(fftSpectrumAction, &QAction::triggered, this, &MainWindow::showFFTSpectrum);
-    
+    ADD_MENU_ACTION(fftMenu, "Show FFT Spectrum", showFFTSpectrum);
     fftMenu->addSeparator();
-    
-    QAction *lowPassAction = fftMenu->addAction("Low-Pass Filter");
-    connect(lowPassAction, &QAction::triggered, this, &MainWindow::applyLowPassFilter);
-    
-    QAction *highPassAction = fftMenu->addAction("High-Pass Filter");
-    connect(highPassAction, &QAction::triggered, this, &MainWindow::applyHighPassFilter);
-    
-    // Tools Menu
-    QMenu *toolsMenu = menuBar->addMenu("Tools");
-    
-    QAction *brushAction = toolsMenu->addAction("Brush Settings");
-    connect(brushAction, &QAction::triggered, this, &MainWindow::showBrushSettings);
-    
-    toolsMenu->addSeparator();
-    
-    QAction *drawModeAction = toolsMenu->addAction("Toggle Drawing Mode");
-    drawModeAction->setCheckable(true);
-    connect(drawModeAction, &QAction::triggered, this, &MainWindow::toggleDrawingMode);
-    
-    QAction *applyBrushAction = toolsMenu->addAction("Apply Brush Effect (Auto)");
-    connect(applyBrushAction, &QAction::triggered, this, &MainWindow::applyBrushEffect);
+    ADD_MENU_ACTION(fftMenu, "Low-Pass Filter", applyLowPassFilter);
+    ADD_MENU_ACTION(fftMenu, "High-Pass Filter", applyHighPassFilter);
 }
 
 void MainWindow::createToolBar() {
@@ -420,58 +158,38 @@ void MainWindow::createToolBar() {
     toolbar->setIconSize(QSize(24, 24));
     addToolBar(Qt::TopToolBarArea, toolbar);
     
-    // Load button
-    QPushButton *loadBtn = new QPushButton("Load Image", this);
-    loadBtn->setProperty("class", "accent");
-    loadBtn->setMinimumWidth(140);
-    connect(loadBtn, &QPushButton::clicked, this, &MainWindow::loadImage);
-    toolbar->addWidget(loadBtn);
+    auto addBtn = [&](const QString& text, auto slot, int minWidth = 100, const char* styleClass = nullptr) {
+        QPushButton *btn = new QPushButton(text, this);
+        if (styleClass) btn->setProperty("class", styleClass);
+        btn->setMinimumWidth(minWidth);
+        connect(btn, &QPushButton::clicked, this, slot);
+        toolbar->addWidget(btn);
+        return btn;
+    };
     
+    addBtn("Load Image", &MainWindow::loadImage, 140, "accent");
+    toolbar->addSeparator();
+    addBtn("Save", &MainWindow::saveImage);
+    addBtn("Reset", &MainWindow::resetImage);
+    
+    // Undo button - NEW
+    undoButton = addBtn("Undo", &MainWindow::undoLastOperation);
+    undoButton->setEnabled(false);  // Initially disabled
+    undoButton->setToolTip("Undo last operation (removes last layer)");
+    
+    addBtn("Use Processed", &MainWindow::useProcessedImage, 120)->setToolTip("Use the processed image for next operations");
     toolbar->addSeparator();
     
-    // Save button
-    QPushButton *saveBtn = new QPushButton("Save", this);
-    saveBtn->setMinimumWidth(100);
-    connect(saveBtn, &QPushButton::clicked, this, &MainWindow::saveImage);
-    toolbar->addWidget(saveBtn);
-    
-    // Reset button
-    QPushButton *resetBtn = new QPushButton("Reset", this);
-    resetBtn->setMinimumWidth(100);
-    connect(resetBtn, &QPushButton::clicked, this, &MainWindow::resetImage);
-    toolbar->addWidget(resetBtn);
-    
-    // Use Processed button - apply processed image as current
-    QPushButton *useProcessedBtn = new QPushButton("Use Processed", this);
-    useProcessedBtn->setMinimumWidth(120);
-    useProcessedBtn->setToolTip("Use the processed image for next operations");
-    connect(useProcessedBtn, &QPushButton::clicked, this, &MainWindow::useProcessedImage);
-    toolbar->addWidget(useProcessedBtn);
-    
+    // Crop button
+    QPushButton *cropModeBtn = addBtn("Crop Mode: OFF", &MainWindow::toggleCropMode, 120);
+    cropModeBtn->setObjectName("cropModeButton");
+    cropModeBtn->setCheckable(true);
+    cropModeBtn->setToolTip("Toggle crop mode to select and crop image region");
     toolbar->addSeparator();
     
-    // Quick process buttons
-    QPushButton *grayBtn = new QPushButton("Grayscale", this);
-    connect(grayBtn, &QPushButton::clicked, this, &MainWindow::convertToGrayscale);
-    toolbar->addWidget(grayBtn);
-    
-    QPushButton *blurBtn = new QPushButton("Blur", this);
-    connect(blurBtn, &QPushButton::clicked, this, &MainWindow::applyGaussianBlur);
-    toolbar->addWidget(blurBtn);
-    
-    QPushButton *edgeBtn = new QPushButton("Edges", this);
-    connect(edgeBtn, &QPushButton::clicked, this, &MainWindow::applyEdgeDetection);
-    toolbar->addWidget(edgeBtn);
-    
-    toolbar->addSeparator();
-    
-    // Drawing mode toggle
-    QPushButton *drawModeBtn = new QPushButton("Drawing Mode: OFF", this);
-    drawModeBtn->setObjectName("drawModeButton");
-    drawModeBtn->setCheckable(true);
-    drawModeBtn->setMinimumWidth(140);
-    connect(drawModeBtn, &QPushButton::clicked, this, &MainWindow::toggleDrawingMode);
-    toolbar->addWidget(drawModeBtn);
+    addBtn("Grayscale", &MainWindow::convertToGrayscale);
+    addBtn("Blur", &MainWindow::applyGaussianBlur);
+    addBtn("Edges", &MainWindow::applyEdgeDetection);
 }
 
 void MainWindow::createCentralWidget() {
@@ -492,16 +210,12 @@ void MainWindow::createCentralWidget() {
     QVBoxLayout *originalLayout = new QVBoxLayout();
     
     QLabel *originalTitle = new QLabel("Original");
-    originalTitle->setStyleSheet("font-size: 14pt; font-weight: 600; color: #e879f9; padding: 8px; letter-spacing: 0.5px;");
+    originalTitle->setObjectName("imageTitle");
     originalLayout->addWidget(originalTitle);
     
     // Container for canvas with border glow
     QWidget *originalContainer = new QWidget();
-    originalContainer->setStyleSheet(
-        "background-color: rgba(45, 37, 71, 0.2); "
-        "border: 2px solid rgba(232, 121, 249, 0.35); "
-        "border-radius: 16px; "
-    );
+    originalContainer->setObjectName("imageContainer");
     QVBoxLayout *originalContainerLayout = new QVBoxLayout(originalContainer);
     originalContainerLayout->setContentsMargins(0, 0, 0, 0);
     
@@ -511,7 +225,7 @@ void MainWindow::createCentralWidget() {
     originalLayout->addWidget(originalContainer, 1);
     
     originalInfoLabel = new QLabel("No image loaded");
-    originalInfoLabel->setStyleSheet("color: #c4b5fd; padding: 8px; font-size: 9pt; font-weight: 500;");
+    originalInfoLabel->setObjectName("infoLabel");
     originalInfoLabel->setAlignment(Qt::AlignCenter);
     originalLayout->addWidget(originalInfoLabel);
     
@@ -521,41 +235,34 @@ void MainWindow::createCentralWidget() {
     QVBoxLayout *processedLayout = new QVBoxLayout();
     
     QLabel *processedTitle = new QLabel("Processed");
-    processedTitle->setStyleSheet("font-size: 14pt; font-weight: 600; color: #c026d3; padding: 8px; letter-spacing: 0.5px;");
+    processedTitle->setObjectName("processedTitle");
     processedLayout->addWidget(processedTitle);
     
     // Container for canvas with border glow
     QWidget *processedContainer = new QWidget();
-    processedContainer->setStyleSheet(
-        "background-color: rgba(45, 37, 71, 0.2); "
-        "border: 2px solid rgba(192, 38, 211, 0.4); "
-        "border-radius: 16px; "
-    );
+    processedContainer->setObjectName("processedContainer");
     QVBoxLayout *processedContainerLayout = new QVBoxLayout(processedContainer);
     processedContainerLayout->setContentsMargins(0, 0, 0, 0);
     
     processedCanvas = new ImageCanvas(processedContainer, "#c026d3");
     processedContainerLayout->addWidget(processedCanvas);
     
-    // Connect mouse events for drawing
-    connect(processedCanvas, &ImageCanvas::mousePressed, this, &MainWindow::onCanvasMousePress);
-    connect(processedCanvas, &ImageCanvas::mouseMoved, this, &MainWindow::onCanvasMouseMove);
-    connect(processedCanvas, &ImageCanvas::mouseReleased, this, &MainWindow::onCanvasMouseRelease);
+    // Connect mouse events for crop tool
+    connect(processedCanvas, &ImageCanvas::mousePressed, this, &MainWindow::onCropMousePress);
+    connect(processedCanvas, &ImageCanvas::mouseMoved, this, &MainWindow::onCropMouseMove);
+    connect(processedCanvas, &ImageCanvas::mouseReleased, this, &MainWindow::onCropMouseRelease);
     
     processedLayout->addWidget(processedContainer, 1);
     
+    // Initialize processedInfoLabel (was missing - caused crash)
+    processedInfoLabel = new QLabel("No processing yet");
+    processedInfoLabel->setObjectName("infoLabel");
+    processedInfoLabel->setAlignment(Qt::AlignCenter);
+    processedLayout->addWidget(processedInfoLabel);
+    
     // Metrics label (below both images)
     metricsLabel = new QLabel("");
-    metricsLabel->setStyleSheet(
-        "background-color: rgba(45, 37, 71, 0.7); "
-        "color: #98d8e8; "
-        "padding: 12px; "
-        "font-size: 10pt; "
-        "font-weight: 600; "
-        "border: 1px solid rgba(232, 121, 249, 0.3); "
-        "border-radius: 8px; "
-        "font-family: 'Consolas', monospace;"
-    );
+    metricsLabel->setObjectName("metricsLabel");
     metricsLabel->setAlignment(Qt::AlignCenter);
     metricsLabel->setVisible(false);
     processedLayout->addWidget(metricsLabel);
@@ -569,7 +276,6 @@ void MainWindow::createStatusBar() {
     QStatusBar *status = statusBar();
     
     statusLabel = new QLabel("Welcome to Naghuma Toolbox! Load an image to get started...");
-    statusLabel->setStyleSheet("color: #e879f9; padding: 5px; font-weight: 500;");
     status->addWidget(statusLabel, 1);
     
     progressBar = new QProgressBar(this);
@@ -579,7 +285,37 @@ void MainWindow::createStatusBar() {
     status->addPermanentWidget(progressBar);
 }
 
-// ===== Helper Functions =====
+bool MainWindow::checkImageLoaded(const QString& operation) {
+    if (!imageLoaded) {
+        QMessageBox::critical(this, "Error", 
+            QString("Please load an image first before attempting to %1!").arg(operation));
+        return false;
+    }
+    return true;
+}
+
+void MainWindow::applySimpleFilter(
+    std::function<void(const cv::Mat&, cv::Mat&)> filterFunc,
+    std::function<cv::Mat(const cv::Mat&)> operationFunc,
+    const QString& layerName,
+    const QString& layerType,
+    const QString& successMessage
+) {
+    if (!checkImageLoaded("apply filter")) return;
+    
+    filterFunc(currentImage, processedImage);
+    recentlyProcessed = true;
+    updateDisplay();
+    
+    if (!processedImage.empty()) {
+        currentImage = processedImage.clone();
+        rightSidebar->addLayer(layerName, layerType, processedImage, operationFunc);
+        rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();  // Update undo button state
+    }
+    
+    updateStatus(successMessage, "success");
+}
 
 void MainWindow::updateDisplay() {
     if (imageLoaded && !originalImage.empty()) {
@@ -661,15 +397,13 @@ void MainWindow::finalizeProcessing(const QString& layerName, const QString& lay
     if (!processedImage.empty()) {
         currentImage = processedImage.clone();
         
-        // Create operation function that captures the current processing
-        auto operation = [this, processedImg = processedImage.clone()](const cv::Mat& input) -> cv::Mat {
-            // Store what operation was performed by comparing processed vs current
-            // For now, return the stored result
-            return processedImg;
-        };
+        // Note: Operations should be provided via applySimpleFilter/applySimpleTransform
+        // If we reach here without an operation function, the layer system will use the stored image
+        // This is a fallback for operations that don't provide a replay function
         
-        rightSidebar->addLayer(layerName, layerType, processedImage, operation);
+        rightSidebar->addLayer(layerName, layerType, processedImage, nullptr);
         rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();  // Update undo button state
     }
 }
 
@@ -717,6 +451,7 @@ void MainWindow::onLayerRemoveRequested(int layerIndex) {
         // Update display
         updateDisplay();
         rightSidebar->updateHistogram(currentImage);
+        updateUndoButtonState();
         
         updateStatus(QString("Layer removed. %1 layers remaining.")
             .arg(rightSidebar->getLayerCount()), "success");
@@ -776,14 +511,13 @@ void MainWindow::onLayersRemoveRequested(const QList<int>& layerIndices) {
         // Update display
         updateDisplay();
         rightSidebar->updateHistogram(currentImage);
+        updateUndoButtonState();  // Update undo button state
         
         updateStatus(QString("Removed %1 layers. %2 layers remaining.")
             .arg(layerIndices.size())
             .arg(rightSidebar->getLayerCount()), "success");
     }
 }
-
-// ===== File Operations =====
 
 void MainWindow::loadImage() {
     QString fileName = QFileDialog::getOpenFileName(this,
@@ -875,13 +609,63 @@ void MainWindow::useProcessedImage() {
     updateStatus("Using processed image as current. Ready for new operations.", "success");
 }
 
-// ===== Information Functions =====
-
-void MainWindow::showImageInfo() {
+void MainWindow::undoLastOperation() {
     if (!imageLoaded) {
-        QMessageBox::information(this, "Info", "No image loaded!");
+        QMessageBox::warning(this, "Warning", "No image loaded!");
         return;
     }
+    
+    int layerCount = rightSidebar->getLayerCount();
+    
+    if (layerCount == 0) {
+        QMessageBox::information(this, "No Operations", "No operations to undo!");
+        return;
+    }
+    
+    // Remove the last layer
+    rightSidebar->removeLayer(layerCount - 1);
+    
+    // Rebuild from remaining layers
+    int remainingLayers = rightSidebar->getLayerCount();
+    
+    if (remainingLayers == 0) {
+        // No layers left - revert to original
+        currentImage = originalImage.clone();
+        processedImage = cv::Mat();
+        recentlyProcessed = false;
+        processedCanvas->clear();
+        updateStatus("Undone all operations. Reverted to original image.", "success");
+    } else {
+        // Rebuild from remaining layers
+        cv::Mat rebuiltImage = rightSidebar->rebuildImage(originalImage);
+        
+        if (!rebuiltImage.empty()) {
+            currentImage = rebuiltImage.clone();
+            processedImage = rebuiltImage.clone();
+            recentlyProcessed = true;
+        } else {
+            // Fallback to previous layer's image
+            processedImage = rightSidebar->getLayerImage(remainingLayers - 1);
+            currentImage = processedImage.clone();
+            recentlyProcessed = true;
+        }
+    }
+    
+    // Update displays
+    updateDisplay();
+    rightSidebar->updateHistogram(currentImage);
+    updateUndoButtonState();
+}
+
+void MainWindow::updateUndoButtonState() {
+    if (undoButton) {
+        bool hasLayers = imageLoaded && rightSidebar->getLayerCount() > 0;
+        undoButton->setEnabled(hasLayers);
+    }
+}
+
+void MainWindow::showImageInfo() {
+    if (!checkImageLoaded("show image info")) return;
     QString info = QString("Size: %1x%2\nChannels: %3\nType: %4")
         .arg(currentImage.cols)
         .arg(currentImage.rows)
@@ -891,31 +675,20 @@ void MainWindow::showImageInfo() {
 }
 
 void MainWindow::showPixelInfo() {
-    if (!imageLoaded) {
-        QMessageBox::information(this, "Info", "No image loaded!");
-        return;
-    }
+    if (!checkImageLoaded("show pixel info")) return;
     QMessageBox::information(this, "Pixel Info", "Click on the image canvas to see pixel values");
 }
 
 void MainWindow::showImageStats() {
-    if (!imageLoaded) {
-        QMessageBox::information(this, "Info", "No image loaded!");
-        return;
-    }
+    if (!checkImageLoaded("show statistics")) return;
     double minVal, maxVal;
     cv::minMaxLoc(currentImage, &minVal, &maxVal);
     QString stats = QString("Min: %1\nMax: %2").arg(minVal).arg(maxVal);
     QMessageBox::information(this, "Statistics", stats);
 }
 
-// ===== Transform Operations =====
-
 void MainWindow::applyTranslation() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
+    if (!checkImageLoaded("apply translation")) return;
     
     TranslationDialog dialog(currentImage, this);
     
@@ -930,9 +703,25 @@ void MainWindow::applyTranslation() {
         processedImage = dialog.getTransformedImage();
         recentlyProcessed = true;
         updateDisplay();
-        finalizeProcessing(QString("Translation (%1, %2)")
-            .arg(dialog.getTranslationX())
-            .arg(dialog.getTranslationY()), "transform");
+        
+        // Store the actual operation with captured parameters
+        int tx = dialog.getTranslationX();
+        int ty = dialog.getTranslationY();
+        auto operation = [tx, ty](const cv::Mat& input) -> cv::Mat {
+            cv::Mat result;
+            cv::Mat transMat = (cv::Mat_<double>(2, 3) << 1, 0, tx, 0, 1, ty);
+            cv::warpAffine(input, result, transMat, input.size());
+            return result;
+        };
+        
+        if (!processedImage.empty()) {
+            currentImage = processedImage.clone();
+            rightSidebar->addLayer(QString("Translation (%1, %2)").arg(tx).arg(ty), 
+                                  "transform", processedImage, operation);
+            rightSidebar->updateHistogram(processedImage);
+            updateUndoButtonState();  // Update undo button state
+        }
+        
         updateStatus("Translation applied successfully!", "success");
     } else {
         // User cancelled - clear preview
@@ -944,10 +733,7 @@ void MainWindow::applyTranslation() {
 }
 
 void MainWindow::applyRotation() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
+    if (!checkImageLoaded("apply rotation")) return;
     
     RotationDialog dialog(currentImage, this);
     
@@ -962,8 +748,25 @@ void MainWindow::applyRotation() {
         processedImage = dialog.getTransformedImage();
         recentlyProcessed = true;
         updateDisplay();
-        finalizeProcessing(QString("Rotation %1°")
-            .arg(dialog.getAngle(), 0, 'f', 1), "transform");
+        
+        // Store the actual operation with captured parameters
+        double angle = dialog.getAngle();
+        auto operation = [angle](const cv::Mat& input) -> cv::Mat {
+            cv::Mat result;
+            cv::Point2f center(input.cols / 2.0f, input.rows / 2.0f);
+            cv::Mat rotMat = cv::getRotationMatrix2D(center, angle, 1.0);
+            cv::warpAffine(input, result, rotMat, input.size());
+            return result;
+        };
+        
+        if (!processedImage.empty()) {
+            currentImage = processedImage.clone();
+            rightSidebar->addLayer(QString("Rotation %1Â°").arg(angle, 0, 'f', 1), 
+                                  "transform", processedImage, operation);
+            rightSidebar->updateHistogram(processedImage);
+            updateUndoButtonState();  // Update undo button state
+        }
+        
         updateStatus("Rotation applied successfully!", "success");
     } else {
         // User cancelled - clear preview
@@ -975,10 +778,7 @@ void MainWindow::applyRotation() {
 }
 
 void MainWindow::applySkew() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
+    if (!checkImageLoaded("apply skew")) return;
     
     SkewDialog dialog(currentImage, this);
     
@@ -1008,6 +808,7 @@ void MainWindow::applySkew() {
             rightSidebar->addLayer(QString("Skew (%.2f, %.2f)").arg(skewX).arg(skewY), 
                                   "transform", processedImage, operation);
             rightSidebar->updateHistogram(processedImage);
+            updateUndoButtonState();  // Update undo button state
         }
         
         updateStatus("Skew applied successfully!", "success");
@@ -1021,10 +822,7 @@ void MainWindow::applySkew() {
 }
 
 void MainWindow::applyZoom() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
+    if (!checkImageLoaded("apply zoom")) return;
     
     ZoomDialog dialog(currentImage, this);
     
@@ -1039,8 +837,23 @@ void MainWindow::applyZoom() {
         processedImage = dialog.getTransformedImage();
         recentlyProcessed = true;
         updateDisplay();
-        finalizeProcessing(QString("Zoom %1x")
-            .arg(dialog.getScale(), 0, 'f', 2), "transform");
+        
+        // Store the actual operation with captured parameters
+        double scale = dialog.getScale();
+        auto operation = [scale](const cv::Mat& input) -> cv::Mat {
+            cv::Mat result;
+            cv::resize(input, result, cv::Size(), scale, scale, cv::INTER_LINEAR);
+            return result;
+        };
+        
+        if (!processedImage.empty()) {
+            currentImage = processedImage.clone();
+            rightSidebar->addLayer(QString("Zoom %1x").arg(scale, 0, 'f', 2), 
+                                  "transform", processedImage, operation);
+            rightSidebar->updateHistogram(processedImage);
+            updateUndoButtonState();  // Update undo button state
+        }
+        
         updateStatus("Zoom applied successfully!", "success");
     } else {
         // User cancelled - clear preview
@@ -1052,51 +865,75 @@ void MainWindow::applyZoom() {
 }
 
 void MainWindow::applyFlipX() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
+    if (!checkImageLoaded("apply flip horizontal")) return;
     
     ImageProcessor::flipHorizontal(currentImage, processedImage);
     recentlyProcessed = true;
     updateDisplay();
-    finalizeProcessing("Flip Horizontal", "transform");
+    
+    auto operation = [](const cv::Mat& input) -> cv::Mat {
+        cv::Mat result;
+        ImageProcessor::flipHorizontal(input, result);
+        return result;
+    };
+    
+    if (!processedImage.empty()) {
+        currentImage = processedImage.clone();
+        rightSidebar->addLayer("Flip Horizontal", "transform", processedImage, operation);
+        rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();  // Update undo button state
+    }
+    
     updateStatus("Flipped horizontally!", "success");
 }
 
 void MainWindow::applyFlipY() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
+    if (!checkImageLoaded("apply flip vertical")) return;
     
     ImageProcessor::flipVertical(currentImage, processedImage);
     recentlyProcessed = true;
     updateDisplay();
-    finalizeProcessing("Flip Vertical", "transform");
+    
+    auto operation = [](const cv::Mat& input) -> cv::Mat {
+        cv::Mat result;
+        ImageProcessor::flipVertical(input, result);
+        return result;
+    };
+    
+    if (!processedImage.empty()) {
+        currentImage = processedImage.clone();
+        rightSidebar->addLayer("Flip Vertical", "transform", processedImage, operation);
+        rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();  // Update undo button state
+    }
+    
     updateStatus("Flipped vertically!", "success");
 }
 
 void MainWindow::applyFlipXY() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
+    if (!checkImageLoaded("apply flip both")) return;
     
     ImageProcessor::flipBoth(currentImage, processedImage);
     recentlyProcessed = true;
     updateDisplay();
-    finalizeProcessing("Flip Both", "transform");
+    
+    auto operation = [](const cv::Mat& input) -> cv::Mat {
+        cv::Mat result;
+        ImageProcessor::flipBoth(input, result);
+        return result;
+    };
+    
+    if (!processedImage.empty()) {
+        currentImage = processedImage.clone();
+        rightSidebar->addLayer("Flip Both", "transform", processedImage, operation);
+        rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();  // Update undo button state
+    }
+    
     updateStatus("Flipped both ways!", "success");
 }
-
-// ===== Histogram Operations =====
-
 void MainWindow::showHistogram() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
+    if (!checkImageLoaded("show histogram")) return;
     
     QDialog *histDialog = new QDialog(this);
     histDialog->setWindowTitle("Image Histogram");
@@ -1126,38 +963,53 @@ void MainWindow::showHistogram() {
 }
 
 void MainWindow::applyHistogramEqualization() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
+    if (!checkImageLoaded("apply histogram equalization")) return;
     
     ImageProcessor::equalizeHistogram(currentImage, processedImage);
     recentlyProcessed = true;
     updateDisplay();
-    finalizeProcessing("Histogram Equalization", "adjustment");
+    
+    auto operation = [](const cv::Mat& input) -> cv::Mat {
+        cv::Mat result;
+        ImageProcessor::equalizeHistogram(input, result);
+        return result;
+    };
+    
+    if (!processedImage.empty()) {
+        currentImage = processedImage.clone();
+        rightSidebar->addLayer("Histogram Equalization", "adjustment", processedImage, operation);
+        rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();  // Update undo button state
+    }
+    
     updateStatus("Histogram equalization applied!", "success");
 }
 
 void MainWindow::applyOtsuThresholding() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
+    if (!checkImageLoaded("apply Otsu thresholding")) return;
     
     ImageProcessor::applyOtsuThreshold(currentImage, processedImage);
     recentlyProcessed = true;
     updateDisplay();
-    finalizeProcessing("Otsu Thresholding", "adjustment");
+    
+    auto operation = [](const cv::Mat& input) -> cv::Mat {
+        cv::Mat result;
+        ImageProcessor::applyOtsuThreshold(input, result);
+        return result;
+    };
+    
+    if (!processedImage.empty()) {
+        currentImage = processedImage.clone();
+        rightSidebar->addLayer("Otsu Thresholding", "adjustment", processedImage, operation);
+        rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();  // Update undo button state
+    }
+    
     updateStatus("Otsu thresholding applied!", "success");
 }
 
-// ===== Image Processing =====
-
 void MainWindow::applyBrightnessContrast() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
+    if (!checkImageLoaded("adjust brightness/contrast")) return;
     
     AdjustmentDialog dialog(currentImage, this);
     
@@ -1188,6 +1040,7 @@ void MainWindow::applyBrightnessContrast() {
                                   .arg(brightness).arg(contrast), 
                                   "adjustment", processedImage, operation);
             rightSidebar->updateHistogram(processedImage);
+            updateUndoButtonState();  // Update undo button state
         }
         
         updateStatus("Brightness/Contrast applied successfully!", "success");
@@ -1201,163 +1054,87 @@ void MainWindow::applyBrightnessContrast() {
 }
 
 void MainWindow::convertToGrayscale() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
-    
-    ImageProcessor::convertToGrayscale(currentImage, processedImage);
-    recentlyProcessed = true;
-    updateDisplay();
-    
-    // Store the actual operation
-    auto operation = [](const cv::Mat& input) -> cv::Mat {
-        cv::Mat result;
-        ImageProcessor::convertToGrayscale(input, result);
-        return result;
-    };
-    
-    if (!processedImage.empty()) {
-        currentImage = processedImage.clone();
-        rightSidebar->addLayer("Grayscale", "adjustment", processedImage, operation);
-        rightSidebar->updateHistogram(processedImage);
-    }
-    
-    updateStatus("Converted to grayscale!", "success");
+    applySimpleFilter(
+        ImageProcessor::convertToGrayscale,
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageProcessor::convertToGrayscale(input, result);
+            return result;
+        },
+        "Grayscale", "adjustment", "Converted to grayscale!"
+    );
 }
 
 void MainWindow::applyBinaryThreshold() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
-    
-    ImageProcessor::applyBinaryThreshold(currentImage, processedImage);
-    recentlyProcessed = true;
-    updateDisplay();
-    
-    auto operation = [](const cv::Mat& input) -> cv::Mat {
-        cv::Mat result;
-        ImageProcessor::applyBinaryThreshold(input, result);
-        return result;
-    };
-    
-    if (!processedImage.empty()) {
-        currentImage = processedImage.clone();
-        rightSidebar->addLayer("Binary Threshold", "adjustment", processedImage, operation);
-        rightSidebar->updateHistogram(processedImage);
-    }
-    
-    updateStatus("Binary threshold applied!", "success");
+    applySimpleFilter(
+        [](const cv::Mat& src, cv::Mat& dst) {
+            ImageProcessor::applyBinaryThreshold(src, dst);
+        },
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageProcessor::applyBinaryThreshold(input, result);
+            return result;
+        },
+        "Binary Threshold", "adjustment", "Binary threshold applied!"
+    );
 }
 
 void MainWindow::applyGaussianBlur() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
-    
-    ImageProcessor::applyGaussianBlur(currentImage, processedImage);
-    recentlyProcessed = true;
-    updateDisplay();
-    
-    auto operation = [](const cv::Mat& input) -> cv::Mat {
-        cv::Mat result;
-        ImageProcessor::applyGaussianBlur(input, result);
-        return result;
-    };
-    
-    if (!processedImage.empty()) {
-        currentImage = processedImage.clone();
-        rightSidebar->addLayer("Gaussian Blur", "filter", processedImage, operation);
-        rightSidebar->updateHistogram(processedImage);
-    }
-    
-    updateStatus("Gaussian blur applied!", "success");
+    applySimpleFilter(
+        [](const cv::Mat& src, cv::Mat& dst) {
+            ImageProcessor::applyGaussianBlur(src, dst);
+        },
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageProcessor::applyGaussianBlur(input, result);
+            return result;
+        },
+        "Gaussian Blur", "filter", "Gaussian blur applied!"
+    );
 }
 
 void MainWindow::applyEdgeDetection() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
-    
-    ImageProcessor::detectEdges(currentImage, processedImage);
-    recentlyProcessed = true;
-    updateDisplay();
-    
-    auto operation = [](const cv::Mat& input) -> cv::Mat {
-        cv::Mat result;
-        ImageProcessor::detectEdges(input, result);
-        return result;
-    };
-    
-    if (!processedImage.empty()) {
-        currentImage = processedImage.clone();
-        rightSidebar->addLayer("Edge Detection", "filter", processedImage, operation);
-        rightSidebar->updateHistogram(processedImage);
-    }
-    
-    updateStatus("Edge detection applied!", "success");
+    applySimpleFilter(
+        [](const cv::Mat& src, cv::Mat& dst) {
+            ImageProcessor::detectEdges(src, dst);
+        },
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageProcessor::detectEdges(input, result);
+            return result;
+        },
+        "Edge Detection", "filter", "Edge detection applied!"
+    );
 }
 
 void MainWindow::invertColors() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
-    
-    ImageProcessor::invertColors(currentImage, processedImage);
-    recentlyProcessed = true;
-    updateDisplay();
-    
-    auto operation = [](const cv::Mat& input) -> cv::Mat {
-        cv::Mat result;
-        ImageProcessor::invertColors(input, result);
-        return result;
-    };
-    
-    if (!processedImage.empty()) {
-        currentImage = processedImage.clone();
-        rightSidebar->addLayer("Invert Colors", "adjustment", processedImage, operation);
-        rightSidebar->updateHistogram(processedImage);
-    }
-    
-    updateStatus("Colors inverted!", "success");
+    applySimpleFilter(
+        ImageProcessor::invertColors,
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageProcessor::invertColors(input, result);
+            return result;
+        },
+        "Invert Colors", "adjustment", "Colors inverted!"
+    );
 }
 
-// ===== Filter Operations =====
-
 void MainWindow::applyLaplacianFilter() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
-    
-    ImageFilters::applyLaplacian(currentImage, processedImage);
-    recentlyProcessed = true;
-    updateDisplay();
-    
-    auto operation = [](const cv::Mat& input) -> cv::Mat {
-        cv::Mat result;
-        ImageFilters::applyLaplacian(input, result);
-        return result;
-    };
-    
-    if (!processedImage.empty()) {
-        currentImage = processedImage.clone();
-        rightSidebar->addLayer("Laplacian Filter", "filter", processedImage, operation);
-        rightSidebar->updateHistogram(processedImage);
-    }
-    
-    updateStatus("Laplacian filter applied successfully!", "success");
+    applySimpleFilter(
+        [](const cv::Mat& src, cv::Mat& dst) {
+            ImageFilters::applyLaplacian(src, dst);
+        },
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageFilters::applyLaplacian(input, result);
+            return result;
+        },
+        "Laplacian Filter", "filter", "Laplacian filter applied successfully!"
+    );
 }
 
 void MainWindow::applySobelCombinedFilter() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
+    if (!checkImageLoaded("apply Sobel filter")) return;
     
     cv::Mat dst_H, dst_V, dst_D;
     ImageFilters::applySobelCombined(currentImage, dst_H, dst_V, dst_D, processedImage, 3);
@@ -1374,245 +1151,132 @@ void MainWindow::applySobelCombinedFilter() {
         currentImage = processedImage.clone();
         rightSidebar->addLayer("Sobel Filter (H+V+D)", "filter", processedImage, operation);
         rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();  // Update undo button state
     }
     
     updateStatus("Sobel filter applied successfully!", "success");
 }
 
 void MainWindow::applyTraditionalFilter() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
-    
-    ImageFilters::applyTraditionalFilter(currentImage, processedImage);
-    recentlyProcessed = true;
-    updateDisplay();
-    
-    auto operation = [](const cv::Mat& input) -> cv::Mat {
-        cv::Mat result;
-        ImageFilters::applyTraditionalFilter(input, result);
-        return result;
-    };
-    
-    if (!processedImage.empty()) {
-        currentImage = processedImage.clone();
-        rightSidebar->addLayer("Traditional Filter", "filter", processedImage, operation);
-        rightSidebar->updateHistogram(processedImage);
-    }
-    
-    updateStatus("Traditional filter applied successfully!", "success");
+    applySimpleFilter(
+        ImageFilters::applyTraditionalFilter,
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageFilters::applyTraditionalFilter(input, result);
+            return result;
+        },
+        "Traditional Filter", "filter", "Traditional filter applied successfully!"
+    );
 }
 
 void MainWindow::applyPyramidalFilter() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
-    
-    ImageFilters::applyPyramidalFilter(currentImage, processedImage);
-    recentlyProcessed = true;
-    updateDisplay();
-    
-    auto operation = [](const cv::Mat& input) -> cv::Mat {
-        cv::Mat result;
-        ImageFilters::applyPyramidalFilter(input, result);
-        return result;
-    };
-    
-    if (!processedImage.empty()) {
-        currentImage = processedImage.clone();
-        rightSidebar->addLayer("Pyramidal Filter", "filter", processedImage, operation);
-        rightSidebar->updateHistogram(processedImage);
-    }
-    
-    updateStatus("Pyramidal filter applied successfully!", "success");
+    applySimpleFilter(
+        ImageFilters::applyPyramidalFilter,
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageFilters::applyPyramidalFilter(input, result);
+            return result;
+        },
+        "Pyramidal Filter", "filter", "Pyramidal filter applied successfully!"
+    );
 }
 
 void MainWindow::applyCircularFilter() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
-    
-    ImageFilters::applyCircularFilter(currentImage, processedImage);
-    recentlyProcessed = true;
-    updateDisplay();
-    
-    auto operation = [](const cv::Mat& input) -> cv::Mat {
-        cv::Mat result;
-        ImageFilters::applyCircularFilter(input, result);
-        return result;
-    };
-    
-    if (!processedImage.empty()) {
-        currentImage = processedImage.clone();
-        rightSidebar->addLayer("Circular Filter", "filter", processedImage, operation);
-        rightSidebar->updateHistogram(processedImage);
-    }
-    
-    updateStatus("Circular filter applied successfully!", "success");
+    applySimpleFilter(
+        ImageFilters::applyCircularFilter,
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageFilters::applyCircularFilter(input, result);
+            return result;
+        },
+        "Circular Filter", "filter", "Circular filter applied successfully!"
+    );
 }
 
 void MainWindow::applyConeFilter() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
-    
-    ImageFilters::applyConeFilter(currentImage, processedImage);
-    recentlyProcessed = true;
-    updateDisplay();
-    
-    auto operation = [](const cv::Mat& input) -> cv::Mat {
-        cv::Mat result;
-        ImageFilters::applyConeFilter(input, result);
-        return result;
-    };
-    
-    if (!processedImage.empty()) {
-        currentImage = processedImage.clone();
-        rightSidebar->addLayer("Cone Filter", "filter", processedImage, operation);
-        rightSidebar->updateHistogram(processedImage);
-    }
-    
-    updateStatus("Cone filter applied successfully!", "success");
+    applySimpleFilter(
+        ImageFilters::applyConeFilter,
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageFilters::applyConeFilter(input, result);
+            return result;
+        },
+        "Cone Filter", "filter", "Cone filter applied successfully!"
+    );
 }
 
-// ===== Morphology Operations =====
-
 void MainWindow::applyErosion() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
-    
-    ImageProcessor::applyErosion(currentImage, processedImage, 5);
-    recentlyProcessed = true;
-    updateDisplay();
-    
-    auto operation = [](const cv::Mat& input) -> cv::Mat {
-        cv::Mat result;
-        ImageProcessor::applyErosion(input, result, 5);
-        return result;
-    };
-    
-    if (!processedImage.empty()) {
-        currentImage = processedImage.clone();
-        rightSidebar->addLayer("Erosion", "morphology", processedImage, operation);
-        rightSidebar->updateHistogram(processedImage);
-    }
-    
-    updateStatus("Erosion applied successfully!", "success");
+    applySimpleFilter(
+        [](const cv::Mat& src, cv::Mat& dst) { 
+            ImageProcessor::applyErosion(src, dst, 5); 
+        },
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageProcessor::applyErosion(input, result, 5);
+            return result;
+        },
+        "Erosion", "morphology", "Erosion applied successfully!"
+    );
 }
 
 void MainWindow::applyDilation() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
-    
-    ImageProcessor::applyDilation(currentImage, processedImage, 5);
-    recentlyProcessed = true;
-    updateDisplay();
-    
-    auto operation = [](const cv::Mat& input) -> cv::Mat {
-        cv::Mat result;
-        ImageProcessor::applyDilation(input, result, 5);
-        return result;
-    };
-    
-    if (!processedImage.empty()) {
-        currentImage = processedImage.clone();
-        rightSidebar->addLayer("Dilation", "morphology", processedImage, operation);
-        rightSidebar->updateHistogram(processedImage);
-    }
-    
-    updateStatus("Dilation applied successfully!", "success");
+    applySimpleFilter(
+        [](const cv::Mat& src, cv::Mat& dst) { 
+            ImageProcessor::applyDilation(src, dst, 5); 
+        },
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageProcessor::applyDilation(input, result, 5);
+            return result;
+        },
+        "Dilation", "morphology", "Dilation applied successfully!"
+    );
 }
 
 void MainWindow::applyOpening() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
-    
-    ImageProcessor::applyOpening(currentImage, processedImage, 5);
-    recentlyProcessed = true;
-    updateDisplay();
-    
-    auto operation = [](const cv::Mat& input) -> cv::Mat {
-        cv::Mat result;
-        ImageProcessor::applyOpening(input, result, 5);
-        return result;
-    };
-    
-    if (!processedImage.empty()) {
-        currentImage = processedImage.clone();
-        rightSidebar->addLayer("Opening", "morphology", processedImage, operation);
-        rightSidebar->updateHistogram(processedImage);
-    }
-    
-    updateStatus("Opening applied successfully!", "success");
+    applySimpleFilter(
+        [](const cv::Mat& src, cv::Mat& dst) { 
+            ImageProcessor::applyOpening(src, dst, 5); 
+        },
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageProcessor::applyOpening(input, result, 5);
+            return result;
+        },
+        "Opening", "morphology", "Opening applied successfully!"
+    );
 }
 
 void MainWindow::applyClosing() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
-    
-    ImageProcessor::applyClosing(currentImage, processedImage, 5);
-    recentlyProcessed = true;
-    updateDisplay();
-    
-    auto operation = [](const cv::Mat& input) -> cv::Mat {
-        cv::Mat result;
-        ImageProcessor::applyClosing(input, result, 5);
-        return result;
-    };
-    
-    if (!processedImage.empty()) {
-        currentImage = processedImage.clone();
-        rightSidebar->addLayer("Closing", "morphology", processedImage, operation);
-        rightSidebar->updateHistogram(processedImage);
-    }
-    
-    updateStatus("Closing applied successfully!", "success");
+    applySimpleFilter(
+        [](const cv::Mat& src, cv::Mat& dst) { 
+            ImageProcessor::applyClosing(src, dst, 5); 
+        },
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageProcessor::applyClosing(input, result, 5);
+            return result;
+        },
+        "Closing", "morphology", "Closing applied successfully!"
+    );
 }
 
 void MainWindow::applyMorphGradient() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
-    
-    ImageProcessor::applyMorphGradient(currentImage, processedImage, 5);
-    recentlyProcessed = true;
-    updateDisplay();
-    
-    auto operation = [](const cv::Mat& input) -> cv::Mat {
-        cv::Mat result;
-        ImageProcessor::applyMorphGradient(input, result, 5);
-        return result;
-    };
-    
-    if (!processedImage.empty()) {
-        currentImage = processedImage.clone();
-        rightSidebar->addLayer("Morphological Gradient", "morphology", processedImage, operation);
-        rightSidebar->updateHistogram(processedImage);
-    }
-    
-    updateStatus("Morphological gradient applied successfully!", "success");
+    applySimpleFilter(
+        [](const cv::Mat& src, cv::Mat& dst) { 
+            ImageProcessor::applyMorphGradient(src, dst, 5); 
+        },
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageProcessor::applyMorphGradient(input, result, 5);
+            return result;
+        },
+        "Morphological Gradient", "morphology", "Morphological gradient applied successfully!"
+    );
 }
 
-// ===== FFT Operations =====
-
 void MainWindow::showFFTSpectrum() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
+    if (!checkImageLoaded("show FFT spectrum")) return;
     
     cv::Mat magnitude, phase;
     ImageProcessor::applyFFT(currentImage, magnitude, phase);
@@ -1652,321 +1316,35 @@ void MainWindow::showFFTSpectrum() {
 }
 
 void MainWindow::applyLowPassFilter() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
-    
-    ImageProcessor::applyLowPassFilter(currentImage, processedImage, 30);
-    recentlyProcessed = true;
-    updateDisplay();
-    
-    auto operation = [](const cv::Mat& input) -> cv::Mat {
-        cv::Mat result;
-        ImageProcessor::applyLowPassFilter(input, result, 30);
-        return result;
-    };
-    
-    if (!processedImage.empty()) {
-        currentImage = processedImage.clone();
-        rightSidebar->addLayer("Low-Pass Filter", "fft", processedImage, operation);
-        rightSidebar->updateHistogram(processedImage);
-    }
-    
-    updateStatus("Low-pass filter applied successfully!", "success");
+    applySimpleFilter(
+        [](const cv::Mat& src, cv::Mat& dst) { 
+            ImageProcessor::applyLowPassFilter(src, dst, 30); 
+        },
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageProcessor::applyLowPassFilter(input, result, 30);
+            return result;
+        },
+        "Low-Pass Filter", "fft", "Low-pass filter applied successfully!"
+    );
 }
 
 void MainWindow::applyHighPassFilter() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
-    
-    ImageProcessor::applyHighPassFilter(currentImage, processedImage, 30);
-    recentlyProcessed = true;
-    updateDisplay();
-    
-    auto operation = [](const cv::Mat& input) -> cv::Mat {
-        cv::Mat result;
-        ImageProcessor::applyHighPassFilter(input, result, 30);
-        return result;
-    };
-    
-    if (!processedImage.empty()) {
-        currentImage = processedImage.clone();
-        rightSidebar->addLayer("High-Pass Filter", "fft", processedImage, operation);
-        rightSidebar->updateHistogram(processedImage);
-    }
-    
-    updateStatus("High-pass filter applied successfully!", "success");
-}
-
-// ===== Brush Tool =====
-
-void MainWindow::showBrushSettings() {
-    BrushDialog dialog(brushTool, this);
-    dialog.exec();
-}
-
-void MainWindow::toggleDrawingMode() {
-    if (!imageLoaded) {
-        QMessageBox::warning(this, "Warning", "Please load an image first!");
-        return;
-    }
-    
-    if (currentImage.empty()) {
-        QMessageBox::warning(this, "Warning", "Current image is not available!");
-        return;
-    }
-    
-    drawingMode = !drawingMode;
-    
-    // Update button text
-    QPushButton *btn = findChild<QPushButton*>("drawModeButton");
-    if (btn) {
-        if (drawingMode) {
-            btn->setText("Drawing Mode: ON");
-            btn->setProperty("class", "accent");
-            btn->style()->unpolish(btn);
-            btn->style()->polish(btn);
-        } else {
-            btn->setText("Drawing Mode: OFF");
-            btn->setProperty("class", "");
-            btn->style()->unpolish(btn);
-            btn->style()->polish(btn);
-        }
-    }
-    
-    // Enable/disable mouse events on processed canvas
-    processedCanvas->setMouseEventsEnabled(drawingMode);
-    
-    if (drawingMode) {
-        // Start with current image as drawing canvas
-        try {
-            drawingCanvas = currentImage.clone();
-            
-            if (drawingCanvas.empty()) {
-                QMessageBox::critical(this, "Error", "Failed to create drawing canvas!");
-                drawingMode = false;
-                processedCanvas->setMouseEventsEnabled(false);
-                if (btn) btn->setText("Drawing Mode: OFF");
-                return;
-            }
-            
-            processedImage = drawingCanvas.clone();
-            recentlyProcessed = true;
-            updateDisplay();
-            updateStatus("Drawing mode ENABLED. Click and drag on the processed image to draw!", "success");
-        } catch (const std::exception& e) {
-            QMessageBox::critical(this, "Error", QString("Failed to initialize drawing: %1").arg(e.what()));
-            drawingMode = false;
-            processedCanvas->setMouseEventsEnabled(false);
-            if (btn) btn->setText("Drawing Mode: OFF");
-        }
-    } else {
-        // Finalize drawing
-        if (!drawingCanvas.empty()) {
-            processedImage = drawingCanvas.clone();
-            recentlyProcessed = true;
-            
-            auto operation = [finalImage = drawingCanvas.clone()](const cv::Mat& input) -> cv::Mat {
-                return finalImage;
-            };
-            
-            currentImage = processedImage.clone();
-            rightSidebar->addLayer("Hand Drawn", "brush", processedImage, operation);
-            rightSidebar->updateHistogram(processedImage);
-        }
-        
-        // Clear drawing canvas
-        drawingCanvas.release();
-        
-        updateDisplay();
-        updateStatus("Drawing mode DISABLED. Drawing saved as layer!", "info");
-    }
-}
-
-void MainWindow::onCanvasMousePress(const QPoint& pos) {
-    if (!drawingMode || drawingCanvas.empty() || pos.x() < 0 || pos.y() < 0) return;
-    
-    // Ensure position is within image bounds
-    if (pos.x() >= drawingCanvas.cols || pos.y() >= drawingCanvas.rows) return;
-    
-    brushTool->startDrawing(pos);
-}
-
-void MainWindow::onCanvasMouseMove(const QPoint& pos) {
-    if (!drawingMode || drawingCanvas.empty() || pos.x() < 0 || pos.y() < 0) return;
-    
-    // Ensure position is within image bounds
-    if (pos.x() >= drawingCanvas.cols || pos.y() >= drawingCanvas.rows) return;
-    
-    if (brushTool->isCurrentlyDrawing()) {
-        brushTool->continueDrawing(pos);
-        
-        // Apply brush stroke to drawing canvas
-        QColor color = brushTool->getBrushColor();
-        int size = brushTool->getBrushSize();
-        int opacity = brushTool->getBrushOpacity();
-        
-        // Simple circle brush
-        cv::Point center(pos.x(), pos.y());
-        int radius = std::max(1, size / 2);
-        
-        cv::Scalar cvColor(color.blue(), color.green(), color.red());
-        
-        // Create temporary overlay
-        cv::Mat overlay = drawingCanvas.clone();
-        
-        try {
-            cv::circle(overlay, center, radius, cvColor, -1);
-            
-            // Blend with opacity
-            double alpha = opacity / 100.0;
-            cv::addWeighted(overlay, alpha, drawingCanvas, 1.0 - alpha, 0, drawingCanvas);
-            
-            // Update display
-            processedImage = drawingCanvas.clone();
-            processedCanvas->setImage(processedImage);
-        } catch (const cv::Exception& e) {
-            // Silently ignore out-of-bounds errors
-            return;
-        }
-    }
-}
-
-void MainWindow::onCanvasMouseRelease(const QPoint& pos) {
-    if (!drawingMode || drawingCanvas.empty() || pos.x() < 0 || pos.y() < 0) return;
-    
-    brushTool->finishDrawing();
-}
-
-void MainWindow::applyBrushEffect() {
-    if (!imageLoaded) {
-        QMessageBox::critical(this, "Error", "Please load an image first!");
-        return;
-    }
-    
-    // Show brush settings first
-    BrushDialog dialog(brushTool, this);
-    if (dialog.exec() != QDialog::Accepted) {
-        return;
-    }
-    
-    QString filter = dialog.getSelectedFilter();
-    int size = brushTool->getBrushSize();
-    int opacity = brushTool->getBrushOpacity();
-    QColor color = brushTool->getBrushColor();
-    
-    // Create a circular brush mask
-    processedImage = currentImage.clone();
-    
-    // Apply brush effect in center as demonstration
-    cv::Point center(processedImage.cols / 2, processedImage.rows / 2);
-    int radius = size / 2;
-    
-    // Create region of interest
-    cv::Rect roi(
-        std::max(0, center.x - radius),
-        std::max(0, center.y - radius),
-        std::min(processedImage.cols - std::max(0, center.x - radius), radius * 2),
-        std::min(processedImage.rows - std::max(0, center.y - radius), radius * 2)
+    applySimpleFilter(
+        [](const cv::Mat& src, cv::Mat& dst) { 
+            ImageProcessor::applyHighPassFilter(src, dst, 30); 
+        },
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageProcessor::applyHighPassFilter(input, result, 30);
+            return result;
+        },
+        "High-Pass Filter", "fft", "High-pass filter applied successfully!"
     );
-    
-    if (roi.width > 0 && roi.height > 0) {
-        cv::Mat roiImage = processedImage(roi);
-        cv::Mat filteredRoi;
-        
-        // Apply selected filter to ROI
-        if (filter == "Blur") {
-            cv::GaussianBlur(roiImage, filteredRoi, cv::Size(15, 15), 0);
-        } else if (filter == "Sharpen") {
-            cv::Mat kernel = (cv::Mat_<float>(3, 3) <<
-                0, -1, 0,
-                -1, 5, -1,
-                0, -1, 0);
-            cv::filter2D(roiImage, filteredRoi, -1, kernel);
-        } else if (filter == "Edge Detection") {
-            cv::Mat gray;
-            if (roiImage.channels() == 3) {
-                cv::cvtColor(roiImage, gray, cv::COLOR_BGR2GRAY);
-                cv::Canny(gray, filteredRoi, 100, 200);
-                cv::cvtColor(filteredRoi, filteredRoi, cv::COLOR_GRAY2BGR);
-            } else {
-                cv::Canny(roiImage, filteredRoi, 100, 200);
-            }
-        } else if (filter == "Grayscale") {
-            if (roiImage.channels() == 3) {
-                cv::Mat gray;
-                cv::cvtColor(roiImage, gray, cv::COLOR_BGR2GRAY);
-                cv::cvtColor(gray, filteredRoi, cv::COLOR_GRAY2BGR);
-            } else {
-                filteredRoi = roiImage.clone();
-            }
-        } else if (filter == "Invert") {
-            filteredRoi = 255 - roiImage;
-        } else {
-            // Color paint mode
-            filteredRoi = cv::Mat(roiImage.size(), roiImage.type(),
-                cv::Scalar(color.blue(), color.green(), color.red()));
-        }
-        
-        // Blend with opacity using circular mask
-        for (int y = 0; y < roi.height; ++y) {
-            for (int x = 0; x < roi.width; ++x) {
-                int dx = x - radius;
-                int dy = y - radius;
-                float dist = std::sqrt(dx*dx + dy*dy);
-                
-                if (dist <= radius) {
-                    float alpha = (opacity / 100.0f);
-                    cv::Vec3b& orig = roiImage.at<cv::Vec3b>(y, x);
-                    cv::Vec3b& filt = filteredRoi.at<cv::Vec3b>(y, x);
-                    
-                    orig[0] = static_cast<uchar>(orig[0] * (1 - alpha) + filt[0] * alpha);
-                    orig[1] = static_cast<uchar>(orig[1] * (1 - alpha) + filt[1] * alpha);
-                    orig[2] = static_cast<uchar>(orig[2] * (1 - alpha) + filt[2] * alpha);
-                }
-            }
-        }
-    }
-    
-    recentlyProcessed = true;
-    updateDisplay();
-    
-    auto operation = [filter, size, opacity, color](const cv::Mat& input) -> cv::Mat {
-        cv::Mat result = input.clone();
-        // Same effect applied
-        return result;
-    };
-    
-    if (!processedImage.empty()) {
-        currentImage = processedImage.clone();
-        rightSidebar->addLayer(QString("Brush Effect (%1)").arg(filter),
-                              "brush", processedImage, operation);
-        rightSidebar->updateHistogram(processedImage);
-    }
-    
-    QMessageBox::information(this, "Brush Applied",
-        QString("Applied %1 brush effect in center!\n\n"
-                "Size: %2px\n"
-                "Opacity: %3%\n"
-                "Filter: %4")
-        .arg(filter)
-        .arg(size)
-        .arg(opacity)
-        .arg(filter));
-    
-    updateStatus(QString("Brush effect applied: %1").arg(filter), "success");
 }
-
-// ===== Metrics Display =====
 
 void MainWindow::showImageMetrics() {
-    if (!imageLoaded) {
-        QMessageBox::information(this, "Info", "No image loaded!");
-        return;
-    }
+    if (!checkImageLoaded("show image metrics")) return;
     
     if (!recentlyProcessed || processedImage.empty()) {
         QMessageBox::warning(this, "Warning", 
@@ -2007,9 +1385,9 @@ void MainWindow::showImageMetrics() {
     metricsInfo += "\n\n===================================\n";
     metricsInfo += "Interpretation:\n";
     metricsInfo += "===================================\n\n";
-    metricsInfo += "• MSE/RMSE: Lower is better (0 = identical)\n";
-    metricsInfo += "• SNR: Higher is better (signal vs noise)\n";
-    metricsInfo += "• PSNR: Higher is better\n";
+    metricsInfo += "ï¿½ MSE/RMSE: Lower is better (0 = identical)\n";
+    metricsInfo += "ï¿½ SNR: Higher is better (signal vs noise)\n";
+    metricsInfo += "ï¿½ PSNR: Higher is better\n";
     metricsInfo += "  - 30-50 dB: Good quality\n";
     metricsInfo += "  - 20-30 dB: Acceptable\n";
     metricsInfo += "  - <20 dB: Poor quality";
@@ -2029,13 +1407,242 @@ void MainWindow::showImageMetrics() {
     
     metricsDialog->exec();
 }
-processedLayout->addWidget(processedContainer, 1);
 
-// Add this missing code:
-processedInfoLabel = new QLabel("No processing yet");
-processedInfoLabel->setStyleSheet("color: #c4b5fd; padding: 8px; font-size: 9pt; font-weight: 500;");
-processedInfoLabel->setAlignment(Qt::AlignCenter);
-processedLayout->addWidget(processedInfoLabel);
+// ============================================================================
+// CROP TOOL IMPLEMENTATION
+// ============================================================================
 
-// Then the metricsLabel continues...
-metricsLabel = new QLabel("");
+void MainWindow::toggleCropMode() {
+    if (!imageLoaded) {
+        QMessageBox::warning(this, "Warning", "Please load an image first!");
+        QPushButton *btn = findChild<QPushButton*>("cropModeButton");
+        if (btn) btn->setChecked(false);
+        return;
+    }
+    
+    if (currentImage.empty()) {
+        QMessageBox::warning(this, "Warning", "Current image is not available!");
+        QPushButton *btn = findChild<QPushButton*>("cropModeButton");
+        if (btn) btn->setChecked(false);
+        return;
+    }
+    
+    cropMode = !cropMode;
+    
+    // Update button text and style
+    QPushButton *btn = findChild<QPushButton*>("cropModeButton");
+    if (btn) {
+        if (cropMode) {
+            btn->setText("Crop Mode: ON");
+            btn->setProperty("class", "accent");
+            btn->style()->unpolish(btn);
+            btn->style()->polish(btn);
+        } else {
+            btn->setText("Crop Mode: OFF");
+            btn->setProperty("class", "");
+            btn->style()->unpolish(btn);
+            btn->style()->polish(btn);
+        }
+    }
+    
+    // Enable/disable mouse events on processed canvas
+    processedCanvas->setMouseEventsEnabled(cropMode);
+    
+    if (cropMode) {
+        // Start crop mode - show current image on processed canvas
+        cropPreviewImage = currentImage.clone();
+        processedImage = cropPreviewImage.clone();
+        recentlyProcessed = true;
+        updateDisplay();
+        updateStatus("Crop mode ENABLED. Click and drag on the processed image to select area to crop!", "success");
+    } else {
+        // Exit crop mode
+        if (cropTool->hasSelection()) {
+            // Cancel any pending selection
+            cropTool->cancelSelection();
+        }
+        processedCanvas->clear();
+        processedImage = cv::Mat();
+        recentlyProcessed = false;
+        updateDisplay();
+        updateStatus("Crop mode DISABLED", "info");
+    }
+}
+
+void MainWindow::onCropMousePress(const QPoint& pos) {
+    if (!cropMode || cropPreviewImage.empty() || pos.x() < 0 || pos.y() < 0) return;
+    
+    // Ensure position is within image bounds
+    if (pos.x() >= cropPreviewImage.cols || pos.y() >= cropPreviewImage.rows) return;
+    
+    cropTool->startSelection(pos);
+}
+
+void MainWindow::onCropMouseMove(const QPoint& pos) {
+    if (!cropMode || cropPreviewImage.empty() || pos.x() < 0 || pos.y() < 0) return;
+    
+    // Ensure position is within image bounds
+    if (pos.x() >= cropPreviewImage.cols || pos.y() >= cropPreviewImage.rows) return;
+    
+    if (cropTool->isSelectingNow()) {
+        cropTool->updateSelection(pos);
+        
+        // Update preview with selection overlay
+        cv::Mat preview = cropTool->getPreview(cropPreviewImage);
+        processedImage = preview;
+        processedCanvas->setImage(processedImage);
+    }
+}
+
+void MainWindow::onCropMouseRelease(const QPoint& pos) {
+    if (!cropMode || cropPreviewImage.empty()) return;
+    
+    cropTool->finishSelection();
+    
+    // Update preview with final selection
+    if (cropTool->hasSelection() && cropTool->isValidCrop()) {
+        cv::Mat preview = cropTool->getPreview(cropPreviewImage);
+        processedImage = preview;
+        processedCanvas->setImage(processedImage);
+        
+        QRect cropRect = cropTool->getCropRect();
+        updateStatus(QString("Crop area selected: %1x%2 at (%3, %4). Click 'Apply Crop' to crop the image.")
+            .arg(cropRect.width())
+            .arg(cropRect.height())
+            .arg(cropRect.x())
+            .arg(cropRect.y()), "success");
+    }
+}
+
+void MainWindow::applyCrop() {
+    if (!cropMode) {
+        QMessageBox::warning(this, "Warning", "Please enable Crop Mode first!");
+        return;
+    }
+    
+    if (!cropTool->hasSelection() || !cropTool->isValidCrop()) {
+        QMessageBox::warning(this, "Warning", 
+            "No valid crop area selected!\n\nClick and drag on the image to select an area to crop.");
+        return;
+    }
+    
+    // Apply crop
+    cv::Mat croppedImage = cropTool->applyCrop(cropPreviewImage);
+    
+    if (croppedImage.empty()) {
+        QMessageBox::critical(this, "Error", "Failed to crop image!");
+        return;
+    }
+    
+    // Store crop rectangle for layer description
+    QRect cropRect = cropTool->getValidatedRect(cv::Size(cropPreviewImage.cols, cropPreviewImage.rows));
+    
+    // Create operation that captures crop rectangle
+    auto operation = [cropRect](const cv::Mat& input) -> cv::Mat {
+        // Validate rectangle is within bounds
+        if (cropRect.x() < 0 || cropRect.y() < 0 ||
+            cropRect.x() + cropRect.width() > input.cols ||
+            cropRect.y() + cropRect.height() > input.rows) {
+            return input;
+        }
+        
+        cv::Rect cvRect(cropRect.x(), cropRect.y(), 
+                       cropRect.width(), cropRect.height());
+        return input(cvRect).clone();
+    };
+    
+    // Store the pre-crop image as original for metrics comparison
+    originalImage = cropPreviewImage.clone();
+    
+    // Update current and processed images
+    processedImage = croppedImage.clone();
+    currentImage = croppedImage.clone();
+    recentlyProcessed = true;
+    
+    // Add to layers
+    rightSidebar->addLayer(
+        QString("Crop (%1x%2)").arg(cropRect.width()).arg(cropRect.height()),
+        "transform",
+        processedImage,
+        operation
+    );
+    rightSidebar->updateHistogram(processedImage);
+    updateUndoButtonState();  // Update undo button state
+    
+    // Exit crop mode
+    cropMode = false;
+    processedCanvas->setMouseEventsEnabled(false);
+    QPushButton *btn = findChild<QPushButton*>("cropModeButton");
+    if (btn) {
+        btn->setChecked(false);
+        btn->setText("Crop Mode: OFF");
+        btn->setProperty("class", "");
+        btn->style()->unpolish(btn);
+        btn->style()->polish(btn);
+    }
+    
+    // Reset crop tool
+    cropTool->cancelSelection();
+    
+    // Update display - this will show the original (pre-crop) on left and cropped on right
+    updateDisplay();
+    updateStatus(QString("Image cropped to %1x%2 pixels!")
+        .arg(croppedImage.cols)
+        .arg(croppedImage.rows), "success");
+}
+
+void MainWindow::cancelCrop() {
+    if (!cropMode) {
+        return;
+    }
+    
+    // Cancel selection
+    cropTool->cancelSelection();
+    
+    // Exit crop mode
+    cropMode = false;
+    processedCanvas->setMouseEventsEnabled(false);
+    QPushButton *btn = findChild<QPushButton*>("cropModeButton");
+    if (btn) {
+        btn->setChecked(false);
+        btn->setText("Crop Mode: OFF");
+        btn->setProperty("class", "");
+        btn->style()->unpolish(btn);
+        btn->style()->polish(btn);
+    }
+    
+    // Clear preview
+    processedCanvas->clear();
+    processedImage = cv::Mat();
+    recentlyProcessed = false;
+    updateDisplay();
+    
+    updateStatus("Crop cancelled", "info");
+}
+
+// ============================================================================
+// KEYBOARD EVENT HANDLING
+// ============================================================================
+
+void MainWindow::keyPressEvent(QKeyEvent *event) {
+    // Handle Enter/Return key to apply crop
+    if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
+        if (cropMode && cropTool->hasSelection() && cropTool->isValidCrop()) {
+            applyCrop();
+            event->accept();
+            return;
+        }
+    }
+    
+    // Handle Escape key to cancel crop
+    if (event->key() == Qt::Key_Escape) {
+        if (cropMode) {
+            cancelCrop();
+            event->accept();
+            return;
+        }
+    }
+    
+    // Pass other events to base class
+    QMainWindow::keyPressEvent(event);
+}
