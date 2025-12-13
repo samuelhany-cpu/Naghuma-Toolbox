@@ -272,24 +272,24 @@ void MainWindow::createCentralWidget() {
     
     // Add tools to toolbar with simple text icons that work everywhere
     // Using single capital letters for maximum compatibility
-    leftToolbar->addTool("Load", "Load an image file", [this]() { loadImage(); }, "L");
-    leftToolbar->addTool("Save", "Save processed image", [this]() { saveImage(); }, "S");
+    leftToolbar->addTool("Load", "Load an image file", [this]() { loadImage(); }, 0xf07c);  // fa-folder-open
+    leftToolbar->addTool("Save", "Save processed image", [this]() { saveImage(); }, 0xf0c7);  // fa-save
     leftToolbar->addSeparator();
     
-    leftToolbar->addTool("Reset", "Reset to original image", [this]() { resetImage(); }, "R");
-    leftToolbar->addTool("Undo", "Undo last operation", [this]() { undoLastOperation(); }, "U");
+    leftToolbar->addTool("Reset", "Reset to original image", [this]() { resetImage(); }, 0xf2ea);  // fa-rotate-left
+    leftToolbar->addTool("Undo", "Undo last operation", [this]() { undoLastOperation(); }, 0xf0e2);  // fa-undo
     leftToolbar->addSeparator();
     
-    leftToolbar->addTool("Crop", "Toggle crop mode", [this]() { toggleCropMode(); }, "C");
-    leftToolbar->addTool("Transform", "Apply transformation", [this]() { applyRotation(); }, "T");
+    leftToolbar->addTool("Crop", "Toggle crop mode", [this]() { toggleCropMode(); }, 0xf125);  // fa-crop
+    leftToolbar->addTool("Transform", "Apply transformation", [this]() { applyRotation(); }, 0xf2f1);  // fa-rotate
     leftToolbar->addSeparator();
     
-    leftToolbar->addTool("Enhance", "Auto enhance image", [this]() { applyAutoEnhancement(); }, "E");
-    leftToolbar->addTool("Denoise", "Remove noise", [this]() { applyNoiseRemoval(); }, "D");
+    leftToolbar->addTool("Enhance", "Auto enhance image", [this]() { applyAutoEnhancement(); }, 0xf005);  // fa-star
+    leftToolbar->addTool("Denoise", "Remove noise", [this]() { applyNoiseRemoval(); }, 0xf130);  // fa-microphone
     leftToolbar->addSeparator();
     
-    leftToolbar->addTool("Filters", "Apply filters", [this]() { applyGaussianBlur(); }, "F");
-    leftToolbar->addTool("Edges", "Edge detection", [this]() { applyEdgeDetection(); }, "G");
+    leftToolbar->addTool("Filters", "Apply filters", [this]() { applyGaussianBlur(); }, 0xf0b0);  // fa-filter
+    leftToolbar->addTool("Edges", "Edge detection", [this]() { applyEdgeDetection(); }, 0xf0e7);  // fa-bolt
     
     mainLayout->addWidget(leftToolbar);
     

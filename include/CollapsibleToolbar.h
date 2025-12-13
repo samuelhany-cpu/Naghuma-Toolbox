@@ -6,9 +6,8 @@
 #include <QVBoxLayout>
 #include <QPropertyAnimation>
 #include <QEasingCurve>
-#include <QFont>
-#include <QFontDatabase>
 #include <functional>
+#include "FontAwesomeIcon.h"
 
 class CollapsibleToolbar : public QWidget {
     Q_OBJECT
@@ -17,9 +16,9 @@ public:
     explicit CollapsibleToolbar(QWidget *parent = nullptr);
     ~CollapsibleToolbar();
 
-    // Add tool buttons with Font Awesome icon support
+    // Add tool buttons with Font Awesome icon codes
     QPushButton* addTool(const QString& text, const QString& tooltip, 
-                        std::function<void()> callback, const QString& iconCode = "");
+                        std::function<void()> callback, int iconCode = 0);
     void addSeparator();
     
     // Toolbar state
@@ -39,7 +38,6 @@ private:
     void setupUI();
     void animateWidth(int targetWidth);
     void updateButtonStyles();
-    void loadFontAwesome();
 
     // UI Components
     QPushButton *toggleButton;
@@ -49,7 +47,6 @@ private:
     
     QList<QPushButton*> toolButtons;
     QPropertyAnimation *widthAnimation;
-    QFont iconFont;
 
     // State
     bool expanded;

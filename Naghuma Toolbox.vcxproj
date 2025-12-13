@@ -77,6 +77,7 @@
     <ClCompile Include="src\moc_LayerManager.cpp" />
     <ClCompile Include="src\moc_AdjustmentDialog.cpp" />
     <ClCompile Include="src\qrc_fonts.cpp" />
+    <ClCompile Include="src\FontAwesomeIcon.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\MainWindow.h" />
@@ -97,6 +98,7 @@
     <ClInclude Include="include\ImageMetrics.h" />
     <ClInclude Include="include\AdjustmentDialog.h" />
     <ClInclude Include="include\filters\ImageFilters.h" />
+    <ClInclude Include="include\FontAwesomeIcon.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="CONSOLE_WARNINGS_FIX.md" />
