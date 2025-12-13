@@ -170,6 +170,70 @@ void applyCircularFilter(const cv::Mat& src, cv::Mat& dst);
  */
 void applyConeFilter(const cv::Mat& src, cv::Mat& dst);
 
+// ============================================================================
+// PHASE 13: BASIC EDGE DETECTORS
+// ============================================================================
+
+/**
+ * @brief Apply Prewitt edge detector (combined X and Y)
+ * @param src Source image
+ * @param dst Destination image
+ */
+void applyPrewittEdge(const cv::Mat& src, cv::Mat& dst);
+
+/**
+ * @brief Apply Prewitt edge detector in X direction
+ * @param src Source image
+ * @param dst Destination image
+ */
+void applyPrewittX(const cv::Mat& src, cv::Mat& dst);
+
+/**
+ * @brief Apply Prewitt edge detector in Y direction
+ * @param src Source image
+ * @param dst Destination image
+ */
+void applyPrewittY(const cv::Mat& src, cv::Mat& dst);
+
+/**
+ * @brief Apply Roberts Cross operator for edge detection
+ * @param src Source image
+ * @param dst Destination image
+ */
+void applyRobertsCross(const cv::Mat& src, cv::Mat& dst);
+
+/**
+ * @brief Apply Laplacian of Gaussian (LoG) edge detector
+ * @param src Source image
+ * @param dst Destination image
+ * @param kernelSize Gaussian kernel size (default: 5)
+ * @param sigma Gaussian sigma (default: 1.4)
+ */
+void applyLoG(const cv::Mat& src, cv::Mat& dst, int kernelSize = 5, double sigma = 1.4);
+
+/**
+ * @brief Apply Difference of Gaussians (DoG) edge detector
+ * @param src Source image
+ * @param dst Destination image
+ * @param kernelSize1 First Gaussian kernel size (default: 5)
+ * @param sigma1 First Gaussian sigma (default: 1.0)
+ * @param kernelSize2 Second Gaussian kernel size (default: 9)
+ * @param sigma2 Second Gaussian sigma (default: 2.0)
+ */
+void applyDoG(const cv::Mat& src, cv::Mat& dst, 
+              int kernelSize1 = 5, double sigma1 = 1.0,
+              int kernelSize2 = 9, double sigma2 = 2.0);
+
+/**
+ * @brief Calculate edge magnitude and direction from gradient images
+ * @param gradX Gradient in X direction
+ * @param gradY Gradient in Y direction
+ * @param magnitude Output magnitude image
+ * @param direction Output direction image (in radians)
+ */
+void calculateEdgeMagnitudeDirection(const cv::Mat& gradX, const cv::Mat& gradY,
+                                    cv::Mat& magnitude, cv::Mat& direction);
+
 } // namespace ImageFilters
 
 #endif // IMAGEFILTERS_H

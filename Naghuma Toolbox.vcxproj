@@ -101,7 +101,9 @@
     <ClInclude Include="include\FontAwesomeIcon.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="apply_phase13_edge_detectors.ps1" />
     <None Include="CONSOLE_WARNINGS_FIX.md" />
+    <None Include="FONT_AWESOME_SUCCESS.md" />
     <None Include="ICON_SYSTEM_FINAL.md" />
     <None Include="PHASE11_ZOOM_PAN_COMPLETE.md" />
     <None Include="PHASE11_ZOOM_PAN_PLAN.md" />
@@ -116,6 +118,7 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="FIX_DRAWING_CRASH.txt" />
+    <Text Include="phase13_functions.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

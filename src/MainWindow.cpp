@@ -2105,4 +2105,101 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
     
     // Pass other events to base class
     QMainWindow::keyPressEvent(event);
+
+// ============================================================================
+// ============================================================================
+
+
+
+
+
+
+}
+
+// ============================================================================
+// PHASE 13: BASIC EDGE DETECTORS
+// ============================================================================
+
+void MainWindow::applyPrewittEdge() {
+    applySimpleFilter(
+        [](const cv::Mat& src, cv::Mat& dst) {
+            ImageFilters::applyPrewittEdge(src, dst);
+        },
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageFilters::applyPrewittEdge(input, result);
+            return result;
+        },
+        "Prewitt Edge Detector", "filter", "Prewitt edge detection applied successfully!"
+    );
+}
+
+void MainWindow::applyPrewittX() {
+    applySimpleFilter(
+        [](const cv::Mat& src, cv::Mat& dst) {
+            ImageFilters::applyPrewittX(src, dst);
+        },
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageFilters::applyPrewittX(input, result);
+            return result;
+        },
+        "Prewitt X (Vertical Edges)", "filter", "Prewitt X filter applied successfully!"
+    );
+}
+
+void MainWindow::applyPrewittY() {
+    applySimpleFilter(
+        [](const cv::Mat& src, cv::Mat& dst) {
+            ImageFilters::applyPrewittY(src, dst);
+        },
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageFilters::applyPrewittY(input, result);
+            return result;
+        },
+        "Prewitt Y (Horizontal Edges)", "filter", "Prewitt Y filter applied successfully!"
+    );
+}
+
+void MainWindow::applyRobertsCross() {
+    applySimpleFilter(
+        [](const cv::Mat& src, cv::Mat& dst) {
+            ImageFilters::applyRobertsCross(src, dst);
+        },
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageFilters::applyRobertsCross(input, result);
+            return result;
+        },
+        "Roberts Cross Operator", "filter", "Roberts cross operator applied successfully!"
+    );
+}
+
+void MainWindow::applyLoG() {
+    applySimpleFilter(
+        [](const cv::Mat& src, cv::Mat& dst) {
+            ImageFilters::applyLoG(src, dst, 5, 1.4);
+        },
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageFilters::applyLoG(input, result, 5, 1.4);
+            return result;
+        },
+        "LoG (Laplacian of Gaussian)", "filter", "LoG filter applied successfully!"
+    );
+}
+
+void MainWindow::applyDoG() {
+    applySimpleFilter(
+        [](const cv::Mat& src, cv::Mat& dst) {
+            ImageFilters::applyDoG(src, dst, 5, 1.0, 9, 2.0);
+        },
+        [](const cv::Mat& input) {
+            cv::Mat result;
+            ImageFilters::applyDoG(input, result, 5, 1.0, 9, 2.0);
+            return result;
+        },
+        "DoG (Difference of Gaussians)", "filter", "DoG filter applied successfully!"
+    );
 }

@@ -315,4 +315,161 @@ void applyConeFilter(const cv::Mat& src, cv::Mat& dst) {
     cv::normalize(dst, dst, 0, 255, cv::NORM_MINMAX, CV_8U);
 }
 
+// ============================================================================
+// PHASE 13: BASIC EDGE DETECTORS
+// ============================================================================
+
+void applyPrewittEdge(const cv::Mat& src, cv::Mat& dst) {
+    cv::Mat gray;
+    
+    // Convert to grayscale if needed
+    if (src.channels() == 3) {
+        cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
+    } else {
+        gray = src.clone();
+    }
+    
+    // Prewitt kernels
+    cv::Mat kernel_x = (cv::Mat_<double>(3, 3) << -1, 0, 1, -1, 0, 1, -1, 0, 1);
+    cv::Mat kernel_y = (cv::Mat_<double>(3, 3) << -1, -1, -1, 0, 0, 0, 1, 1, 1);
+    
+    cv::Mat grad_x, grad_y;
+    cv::filter2D(gray, grad_x, CV_64F, kernel_x);
+    cv::filter2D(gray, grad_y, CV_64F, kernel_y);
+    
+    // Calculate magnitude
+    cv::Mat magnitude;
+    cv::magnitude(grad_x, grad_y, magnitude);
+    
+    // Convert to 8-bit
+    magnitude.convertTo(dst, CV_8U);
+}
+
+void applyPrewittX(const cv::Mat& src, cv::Mat& dst) {
+    cv::Mat gray;
+    
+    // Convert to grayscale if needed
+    if (src.channels() == 3) {
+        cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
+    } else {
+        gray = src.clone();
+    }
+    
+    // Prewitt X kernel (vertical edges)
+    cv::Mat kernel_x = (cv::Mat_<double>(3, 3) << -1, 0, 1, -1, 0, 1, -1, 0, 1);
+    
+    cv::Mat grad_x;
+    cv::filter2D(gray, grad_x, CV_16S, kernel_x);
+    cv::convertScaleAbs(grad_x, dst);
+}
+
+void applyPrewittY(const cv::Mat& src, cv::Mat& dst) {
+    cv::Mat gray;
+    
+    // Convert to grayscale if needed
+    if (src.channels() == 3) {
+        cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
+    } else {
+        gray = src.clone();
+    }
+    
+    // Prewitt Y kernel (horizontal edges)
+    cv::Mat kernel_y = (cv::Mat_<double>(3, 3) << -1, -1, -1, 0, 0, 0, 1, 1, 1);
+    
+    cv::Mat grad_y;
+    cv::filter2D(gray, grad_y, CV_16S, kernel_y);
+    cv::convertScaleAbs(grad_y, dst);
+}
+
+void applyRobertsCross(const cv::Mat& src, cv::Mat& dst) {
+    cv::Mat gray;
+    
+    // Convert to grayscale if needed
+    if (src.channels() == 3) {
+        cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
+    } else {
+        gray = src.clone();
+    }
+    
+    // Roberts Cross kernels (2x2)
+    cv::Mat kernel_x = (cv::Mat_<double>(2, 2) << 1, 0, 0, -1);
+    cv::Mat kernel_y = (cv::Mat_<double>(2, 2) << 0, 1, -1, 0);
+    
+    cv::Mat grad_x, grad_y;
+    cv::filter2D(gray, grad_x, CV_64F, kernel_x);
+    cv::filter2D(gray, grad_y, CV_64F, kernel_y);
+    
+    // Calculate magnitude
+    cv::Mat magnitude;
+    cv::magnitude(grad_x, grad_y, magnitude);
+    
+    // Convert to 8-bit
+    magnitude.convertTo(dst, CV_8U);
+}
+
+void applyLoG(const cv::Mat& src, cv::Mat& dst, int kernelSize, double sigma) {
+    cv::Mat gray;
+    
+    // Convert to grayscale if needed
+    if (src.channels() == 3) {
+        cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
+    } else {
+        gray = src.clone();
+    }
+    
+    // Ensure kernel size is odd
+    if (kernelSize % 2 == 0) {
+        kernelSize++;
+    }
+    
+    // Apply Gaussian blur first
+    cv::Mat blurred;
+    cv::GaussianBlur(gray, blurred, cv::Size(kernelSize, kernelSize), sigma);
+    
+    // Apply Laplacian
+    cv::Mat laplacian;
+    cv::Laplacian(blurred, laplacian, CV_16S, 3);
+    
+    // Convert to 8-bit
+    cv::convertScaleAbs(laplacian, dst);
+}
+
+void applyDoG(const cv::Mat& src, cv::Mat& dst, 
+              int kernelSize1, double sigma1,
+              int kernelSize2, double sigma2) {
+    cv::Mat gray;
+    
+    // Convert to grayscale if needed
+    if (src.channels() == 3) {
+        cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
+    } else {
+        gray = src.clone();
+    }
+    
+    // Ensure kernel sizes are odd
+    if (kernelSize1 % 2 == 0) kernelSize1++;
+    if (kernelSize2 % 2 == 0) kernelSize2++;
+    
+    // Apply two Gaussian blurs with different sigmas
+    cv::Mat blur1, blur2;
+    cv::GaussianBlur(gray, blur1, cv::Size(kernelSize1, kernelSize1), sigma1);
+    cv::GaussianBlur(gray, blur2, cv::Size(kernelSize2, kernelSize2), sigma2);
+    
+    // Difference of Gaussians
+    cv::Mat dog;
+    cv::subtract(blur1, blur2, dog);
+    
+    // Convert to 8-bit
+    cv::convertScaleAbs(dog, dst);
+}
+
+void calculateEdgeMagnitudeDirection(const cv::Mat& gradX, const cv::Mat& gradY,
+                                    cv::Mat& magnitude, cv::Mat& direction) {
+    // Calculate magnitude: sqrt(gx^2 + gy^2)
+    cv::magnitude(gradX, gradY, magnitude);
+    
+    // Calculate direction: atan2(gy, gx)
+    cv::phase(gradX, gradY, direction, true);  // true for angles in degrees
+}
+
 } // namespace ImageFilters

@@ -132,6 +132,9 @@
     <ClCompile Include="src\qrc_fonts.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\FontAwesomeIcon.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\MainWindow.h">
@@ -188,6 +191,9 @@
     <ClInclude Include="include\filters\ImageFilters.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\FontAwesomeIcon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="CONSOLE_WARNINGS_FIX.md" />
@@ -202,8 +208,11 @@
     <None Include="QUICK_FIX.md" />
     <None Include="scripts\add_new_files.ps1" />
     <None Include="ICON_SYSTEM_FINAL.md" />
+    <None Include="apply_phase13_edge_detectors.ps1" />
+    <None Include="FONT_AWESOME_SUCCESS.md" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="FIX_DRAWING_CRASH.txt" />
+    <Text Include="phase13_functions.txt" />
   </ItemGroup>
 </Project>

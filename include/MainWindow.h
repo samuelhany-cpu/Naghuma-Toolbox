@@ -105,6 +105,14 @@ private slots:
     void applyCircularFilter();
     void applyConeFilter();
     
+    // Phase 13: Basic Edge Detectors
+    void applyPrewittEdge();
+    void applyPrewittX();
+    void applyPrewittY();
+    void applyRobertsCross();
+    void applyLoG();
+    void applyDoG();
+    
     // Morphology Operations
     void applyErosion();
     void applyDilation();
