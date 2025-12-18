@@ -1,5 +1,6 @@
 #include "MainWindow.h"
 #include "ImageCanvas.h"
+#include <QInputDialog>
 #include "HistogramWidget.h"
 #include "RightSidebarWidget.h"
 #include "ImageProcessor.h"
@@ -9,20 +10,27 @@
 #include "CompressionDialog.h"
 #include "AutoEnhanceDialog.h"
 #include "NoiseRemovalDialog.h"
+#include "ColorConversionDialog.h"
 #include "CollapsibleToolbar.h"
 #include "ROIManager.h"
 #include "ROIShape.h"
 #include "ROIDialog.h"
 #include "filters/ImageFilters.h"
+#include "color/ColorSpace.h"
 #include "ImageMetrics.h"
 #include "Theme.h"
 #include "MainWindow_Macros.h"
+#include "ThresholdingDialog.h"  // Phase 16
+#include "SegmentationDialog.h"  // Phase 17
 #include <QApplication>
 #include <QScreen>
 #include <QVBoxLayout>
 #include <QTextEdit>
 #include <QHBoxLayout>
 #include <algorithm>
+#include "color/ColorSpace.h"
+#include "color/ColorProcessor.h"  // Add this line
+#include "ImageMetrics.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), imageLoaded(false), recentlyProcessed(false), cropMode(false) {
@@ -151,6 +159,36 @@ void MainWindow::createMenuBar() {
     ADD_MENU_ACTION(filtersMenu, "Pyramidal Filter", applyPyramidalFilter);
     ADD_MENU_ACTION(filtersMenu, "Circular Filter", applyCircularFilter);
     ADD_MENU_ACTION(filtersMenu, "Cone Filter", applyConeFilter);
+    filtersMenu->addSeparator();
+
+    // Phase 13: Basic Edge Detectors  
+    QMenu* edgeMenu = filtersMenu->addMenu("Edge Detectors");
+    ADD_MENU_ACTION(edgeMenu, "Prewitt Edge Detector", applyPrewittEdge);
+    ADD_MENU_ACTION(edgeMenu, "Prewitt X (Vertical Edges)", applyPrewittX);
+    ADD_MENU_ACTION(edgeMenu, "Prewitt Y (Horizontal Edges)", applyPrewittY);
+    edgeMenu->addSeparator();
+    ADD_MENU_ACTION(edgeMenu, "Roberts Cross Operator", applyRobertsCross);
+    edgeMenu->addSeparator();
+    ADD_MENU_ACTION(edgeMenu, "LoG (Laplacian of Gaussian)", applyLoG);
+    ADD_MENU_ACTION(edgeMenu, "DoG (Difference of Gaussians)", applyDoG);
+    
+    // Phase 14: Color Processing Menu
+    QMenu *colorMenu = menuBar->addMenu("Color");
+    ADD_MENU_ACTION(colorMenu, "Color Space Conversion...", showColorConversionDialog);
+    colorMenu->addSeparator();
+    ADD_MENU_ACTION(colorMenu, "Per-Channel Equalization", applyChannelEqualization);
+    ADD_MENU_ACTION(colorMenu, "Auto White Balance", applyAutoWhiteBalance);
+    ADD_MENU_ACTION(colorMenu, "Gamma Correction", applyGammaCorrection);
+    colorMenu->addSeparator();
+    ADD_MENU_ACTION(colorMenu, "Pseudocolor (Colormap)", applyPseudocolor);
+    ADD_MENU_ACTION(colorMenu, "Gray Level Slicing", applyGrayLevelSlicing);
+    ADD_MENU_ACTION(colorMenu, "Bit Plane Slicing", applyBitPlaneSlicing);
+    
+    // Phase 16: Segmentation Menu - NEW
+    QMenu *segmentMenu = menuBar->addMenu("Segmentation");
+    ADD_MENU_ACTION(segmentMenu, "Thresholding...", showThresholdingDialog);
+    segmentMenu->addSeparator();
+    ADD_MENU_ACTION(segmentMenu, "Region-Based Segmentation...", showAdvancedSegmentationDialog);
     
     // Morphology Menu
     QMenu *morphMenu = menuBar->addMenu("Morphology");
@@ -2105,15 +2143,6 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
     
     // Pass other events to base class
     QMainWindow::keyPressEvent(event);
-
-// ============================================================================
-// ============================================================================
-
-
-
-
-
-
 }
 
 // ============================================================================
@@ -2202,4 +2231,417 @@ void MainWindow::applyDoG() {
         },
         "DoG (Difference of Gaussians)", "filter", "DoG filter applied successfully!"
     );
+}
+
+// ============================================================================
+// PHASE 14: COLOR SPACE CONVERSIONS
+// ============================================================================
+
+void MainWindow::showColorConversionDialog() {
+    if (!checkImageLoaded("convert color space")) return;
+    
+    ColorConversionDialog dialog(currentImage, this);
+    
+    // Connect preview signal
+    connect(&dialog, &ColorConversionDialog::previewUpdated, this, [this](const cv::Mat& preview) {
+        processedImage = preview.clone();
+        recentlyProcessed = true;
+        updateDisplay();
+    });
+    
+    if (dialog.exec() == QDialog::Accepted && dialog.wasApplied()) {
+        processedImage = dialog.getConvertedImage();
+        recentlyProcessed = true;
+        updateDisplay();
+        
+        QString sourceSpace = dialog.getSourceColorSpace();
+        QString targetSpace = dialog.getTargetColorSpace();
+        
+        // Create operation function
+        auto operation = [sourceSpace, targetSpace](const cv::Mat& input) -> cv::Mat {
+            cv::Mat result;
+            cv::Mat rgbImage;
+            
+            // Source to RGB
+            if (sourceSpace == "RGB") {
+                rgbImage = input.clone();
+            } else if (sourceSpace == "HSV") {
+                ColorSpace::HSVtoRGB(input, rgbImage);
+            } else if (sourceSpace == "LAB") {
+                ColorSpace::LABtoRGB(input, rgbImage);
+            } else if (sourceSpace == "YCbCr") {
+                ColorSpace::YCbCrtoRGB(input, rgbImage);
+            } else if (sourceSpace == "HSI") {
+                ColorSpace::HSItoRGB(input, rgbImage);
+            } else if (sourceSpace == "Grayscale") {
+                ColorSpace::GraytoRGB(input, rgbImage);
+            }
+            
+            // RGB to target
+            if (targetSpace == "RGB") {
+                result = rgbImage.clone();
+            } else if (targetSpace == "HSV") {
+                ColorSpace::RGBtoHSV(rgbImage, result);
+            } else if (targetSpace == "LAB") {
+                ColorSpace::RGBtoLAB(rgbImage, result);
+            } else if (targetSpace == "YCbCr") {
+                ColorSpace::RGBtoYCbCr(rgbImage, result);
+            } else if (targetSpace == "HSI") {
+                ColorSpace::RGBtoHSI(rgbImage, result);
+            } else if (targetSpace == "Grayscale") {
+                ColorSpace::RGBtoGray(rgbImage, result);
+            }
+            
+            return result;
+        };
+        
+        if (!processedImage.empty()) {
+            currentImage = processedImage.clone();
+            rightSidebar->addLayer(
+                QString("Color: %1 → %2").arg(sourceSpace, targetSpace),
+                "color",
+                processedImage,
+                operation
+            );
+            rightSidebar->updateHistogram(processedImage);
+            updateUndoButtonState();
+        }
+        
+        updateStatus(QString("Color conversion applied: %1 → %2").arg(sourceSpace, targetSpace), "success");
+    } else {
+        // User cancelled - clear preview
+        processedImage = cv::Mat();
+        recentlyProcessed = false;
+        processedCanvas->clear();
+        updateDisplay();
+    }
+
+}
+
+// ============================================================================
+// PHASE 15: COLOR PROCESSING OPERATIONS
+// ============================================================================
+
+void MainWindow::applyChannelEqualization() {
+    if (!checkImageLoaded("apply per-channel equalization")) return;
+
+    if (currentImage.channels() != 3) {
+        QMessageBox::warning(this, "Warning",
+            "Per-channel equalization requires a color image (3 channels)!");
+        return;
+    }
+
+    ColorProcessor::equalizeChannels(currentImage, processedImage);
+    recentlyProcessed = true;
+    updateDisplay();
+
+    auto operation = [](const cv::Mat& input) -> cv::Mat {
+        cv::Mat result;
+        ColorProcessor::equalizeChannels(input, result);
+        return result;
+        };
+
+    if (!processedImage.empty()) {
+        currentImage = processedImage.clone();
+        rightSidebar->addLayer("Per-Channel Equalization", "color", processedImage, operation);
+        rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();
+    }
+
+    updateStatus("Per-channel histogram equalization applied!", "success");
+}
+
+void MainWindow::applyAutoWhiteBalance() {
+    if (!checkImageLoaded("apply auto white balance")) return;
+
+    if (currentImage.channels() != 3) {
+        QMessageBox::warning(this, "Warning",
+            "Auto white balance requires a color image (3 channels)!");
+        return;
+    }
+
+    ColorProcessor::autoWhiteBalance(currentImage, processedImage);
+    recentlyProcessed = true;
+    updateDisplay();
+
+    auto operation = [](const cv::Mat& input) -> cv::Mat {
+        cv::Mat result;
+        ColorProcessor::autoWhiteBalance(input, result);
+        return result;
+        };
+
+    if (!processedImage.empty()) {
+        currentImage = processedImage.clone();
+        rightSidebar->addLayer("Auto White Balance", "color", processedImage, operation);
+        rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();
+    }
+
+    updateStatus("Auto white balance applied!", "success");
+}
+
+void MainWindow::applyGammaCorrection() {
+    if (!checkImageLoaded("apply gamma correction")) return;
+
+    bool ok;
+    double gamma = QInputDialog::getDouble(this, "Gamma Correction",
+        "Enter gamma value:\n(< 1.0 brightens, > 1.0 darkens)",
+        1.0, 0.1, 5.0, 2, &ok);
+
+    if (!ok) return;
+
+    ColorProcessor::gammaCorrection(currentImage, processedImage, gamma);
+    recentlyProcessed = true;
+    updateDisplay();
+
+    auto operation = [gamma](const cv::Mat& input) -> cv::Mat {
+        cv::Mat result;
+        ColorProcessor::gammaCorrection(input, result, gamma);
+        return result;
+        };
+
+    if (!processedImage.empty()) {
+        currentImage = processedImage.clone();
+        rightSidebar->addLayer(QString("Gamma Correction (γ=%1)").arg(gamma, 0, 'f', 2),
+            "color", processedImage, operation);
+        rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();
+    }
+
+    updateStatus(QString("Gamma correction (γ=%1) applied!").arg(gamma, 0, 'f', 2), "success");
+}
+
+void MainWindow::applyPseudocolor() {
+    if (!checkImageLoaded("apply pseudocolor")) return;
+
+    QStringList colormaps;
+    colormaps << "AUTUMN" << "BONE" << "JET" << "WINTER" << "RAINBOW"
+        << "OCEAN" << "SUMMER" << "SPRING" << "COOL" << "HSV"
+        << "PINK" << "HOT" << "PARULA" << "MAGMA" << "INFERNO"
+        << "PLASMA" << "VIRIDIS" << "CIVIDIS" << "TWILIGHT";
+
+    bool ok;
+    QString selection = QInputDialog::getItem(this, "Pseudocolor",
+        "Select colormap:", colormaps, 0, false, &ok);
+
+    if (!ok) return;
+
+    int colormapIndex = colormaps.indexOf(selection);
+
+    ColorProcessor::applyPseudocolor(currentImage, processedImage, colormapIndex);
+    recentlyProcessed = true;
+    updateDisplay();
+
+    auto operation = [colormapIndex](const cv::Mat& input) -> cv::Mat {
+        cv::Mat result;
+        ColorProcessor::applyPseudocolor(input, result, colormapIndex);
+        return result;
+        };
+
+    if (!processedImage.empty()) {
+        currentImage = processedImage.clone();
+        rightSidebar->addLayer(QString("Pseudocolor (%1)").arg(selection),
+            "color", processedImage, operation);
+        rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();
+    }
+
+    updateStatus(QString("Pseudocolor (%1) applied!").arg(selection), "success");
+}
+
+void MainWindow::applyGrayLevelSlicing() {
+    if (!checkImageLoaded("apply gray level slicing")) return;
+
+    // Convert to grayscale if needed
+    cv::Mat grayImage;
+    if (currentImage.channels() == 3) {
+        cv::cvtColor(currentImage, grayImage, cv::COLOR_BGR2GRAY);
+    }
+    else {
+        grayImage = currentImage.clone();
+    }
+
+    // Get parameters from user
+    bool ok;
+    int minLevel = QInputDialog::getInt(this, "Gray Level Slicing",
+        "Enter minimum gray level (0-255):",
+        100, 0, 255, 1, &ok);
+    if (!ok) return;
+
+    int maxLevel = QInputDialog::getInt(this, "Gray Level Slicing",
+        "Enter maximum gray level (0-255):",
+        200, 0, 255, 1, &ok);
+    if (!ok) return;
+
+    QStringList options;
+    options << "Preserve Background" << "Black Background";
+    QString bgOption = QInputDialog::getItem(this, "Gray Level Slicing",
+        "Background option:", options, 0, false, &ok);
+    if (!ok) return;
+
+    bool preserveBackground = (bgOption == "Preserve Background");
+
+    ColorProcessor::grayLevelSlicing(grayImage, processedImage, minLevel, maxLevel, 255, preserveBackground);
+    recentlyProcessed = true;
+    updateDisplay();
+
+    auto operation = [minLevel, maxLevel, preserveBackground](const cv::Mat& input) -> cv::Mat {
+        cv::Mat gray, result;
+        if (input.channels() == 3) {
+            cv::cvtColor(input, gray, cv::COLOR_BGR2GRAY);
+        }
+        else {
+            gray = input.clone();
+        }
+        ColorProcessor::grayLevelSlicing(gray, result, minLevel, maxLevel, 255, preserveBackground);
+        return result;
+        };
+
+    if (!processedImage.empty()) {
+        currentImage = processedImage.clone();
+        rightSidebar->addLayer(QString("Gray Level Slicing [%1-%2]").arg(minLevel).arg(maxLevel),
+            "color", processedImage, operation);
+        rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();
+    }
+
+    updateStatus(QString("Gray level slicing [%1-%2] applied!").arg(minLevel).arg(maxLevel), "success");
+}
+
+void MainWindow::applyBitPlaneSlicing() {
+    if (!checkImageLoaded("apply bit plane slicing")) return;
+
+    // Convert to grayscale if needed
+    cv::Mat grayImage;
+    if (currentImage.channels() == 3) {
+        cv::cvtColor(currentImage, grayImage, cv::COLOR_BGR2GRAY);
+    }
+    else {
+        grayImage = currentImage.clone();
+    }
+
+    bool ok;
+    int bitPlane = QInputDialog::getInt(this, "Bit Plane Slicing",
+        "Enter bit plane (0-7, where 0 is LSB, 7 is MSB):",
+        7, 0, 7, 1, &ok);
+
+    if (!ok) return;
+
+    ColorProcessor::bitPlaneSlicing(grayImage, processedImage, bitPlane);
+    recentlyProcessed = true;
+    updateDisplay();
+
+    auto operation = [bitPlane](const cv::Mat& input) -> cv::Mat {
+        cv::Mat gray, result;
+        if (input.channels() == 3) {
+            cv::cvtColor(input, gray, cv::COLOR_BGR2GRAY);
+        }
+        else {
+            gray = input.clone();
+        }
+        ColorProcessor::bitPlaneSlicing(gray, result, bitPlane);
+        return result;
+        };
+
+    if (!processedImage.empty()) {
+        currentImage = processedImage.clone();
+        rightSidebar->addLayer(QString("Bit Plane %1").arg(bitPlane),
+            "color", processedImage, operation);
+        rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();
+    }
+
+    updateStatus(QString("Bit plane %1 extracted!").arg(bitPlane), "success");
+}
+
+// ============================================================================
+// PHASE 16: IMAGE SEGMENTATION - THRESHOLDING
+// ============================================================================
+
+void MainWindow::showThresholdingDialog() {
+    if (!checkImageLoaded("apply thresholding")) return;
+    
+    ThresholdingDialog dialog(currentImage, this);
+    
+    // Connect preview signal
+    connect(&dialog, &ThresholdingDialog::previewUpdated, this, [this](const cv::Mat& preview) {
+        processedImage = preview.clone();
+        recentlyProcessed = true;
+        updateDisplay();
+    });
+    
+    if (dialog.exec() == QDialog::Accepted && dialog.wasApplied()) {
+        processedImage = dialog.getThresholdedImage();
+        recentlyProcessed = true;
+        updateDisplay();
+        
+        QString thresholdType = dialog.getThresholdingType();
+        
+        // For simplicity, we'll store the result directly
+        // A complete implementation would capture parameters like the color processing dialogs
+        if (!processedImage.empty()) {
+            currentImage = processedImage.clone();
+            rightSidebar->addLayer(
+                QString("Threshold: %1").arg(thresholdType),
+                "segmentation",
+                processedImage,
+                nullptr  // Operation replay not implemented for thresholding
+            );
+            rightSidebar->updateHistogram(processedImage);
+            updateUndoButtonState();
+        }
+        
+        updateStatus(QString("%1 applied successfully!").arg(thresholdType), "success");
+    } else {
+        // User cancelled - clear preview
+        processedImage = cv::Mat();
+        recentlyProcessed = false;
+        processedCanvas->clear();
+        updateDisplay();
+    }
+}
+
+// ============================================================================
+// PHASE 17: ADVANCED SEGMENTATION - REGION-BASED
+// ============================================================================
+
+void MainWindow::showAdvancedSegmentationDialog() {
+    if (!checkImageLoaded("apply advanced segmentation")) return;
+    
+    SegmentationDialog dialog(currentImage, this);
+    
+    // Connect preview signal
+    connect(&dialog, &SegmentationDialog::previewUpdated, this, [this](const cv::Mat& preview) {
+        processedImage = preview.clone();
+        recentlyProcessed = true;
+        updateDisplay();
+    });
+    
+    if (dialog.exec() == QDialog::Accepted && dialog.wasApplied()) {
+        processedImage = dialog.getSegmentedImage();
+        recentlyProcessed = true;
+        updateDisplay();
+        
+        QString segmentType = dialog.getSegmentationType();
+        
+        if (!processedImage.empty()) {
+            currentImage = processedImage.clone();
+            rightSidebar->addLayer(
+                QString("Segment: %1").arg(segmentType),
+                "segmentation",
+                processedImage,
+                nullptr  // Operation replay not implemented for advanced segmentation
+            );
+            rightSidebar->updateHistogram(processedImage);
+            updateUndoButtonState();
+        }
+        
+        updateStatus(QString("%1 segmentation applied successfully!").arg(segmentType), "success");
+    } else {
+        // User cancelled - clear preview
+        processedImage = cv::Mat();
+        recentlyProcessed = false;
+        processedCanvas->clear();
+        updateDisplay();
+    }
 }

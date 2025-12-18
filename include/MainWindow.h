@@ -113,6 +113,23 @@ private slots:
     void applyLoG();
     void applyDoG();
     
+    // Phase 14: Color Space Conversions
+    void showColorConversionDialog();
+    
+    // Phase 15: Color Processing Operations
+    void applyChannelEqualization();
+    void applyAutoWhiteBalance();
+    void applyGammaCorrection();
+    void applyPseudocolor();
+    void applyGrayLevelSlicing();
+    void applyBitPlaneSlicing();
+    
+    // Phase 16: Image Segmentation - Thresholding
+    void showThresholdingDialog();
+    
+    // Phase 17: Advanced Segmentation - NEW
+    void showAdvancedSegmentationDialog();
+
     // Morphology Operations
     void applyErosion();
     void applyDilation();
@@ -195,6 +212,8 @@ private:
     QPoint roiEndPoint;
     bool roiSelecting;
     RectangleROI *currentROI;
+
+
 };
 
 #endif // MAINWINDOW_H

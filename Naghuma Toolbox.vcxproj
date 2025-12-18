@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -42,6 +42,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="lib\color\ColorSpace.cpp" />
+    <ClCompile Include="src\ColorConversionDialog.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\MainWindow.cpp" />
     <ClCompile Include="src\ImageCanvas.cpp" />
@@ -50,6 +52,7 @@
     <ClCompile Include="src\moc_CropTool.cpp" />
     <ClCompile Include="src\CompressionDialog.cpp" />
     <ClCompile Include="src\moc_CompressionDialog.cpp" />
+    <ClCompile Include="src\moc_SegmentationDialog.cpp" />
     <ClCompile Include="src\AutoEnhanceDialog.cpp" />
     <ClCompile Include="src\moc_AutoEnhanceDialog.cpp" />
     <ClCompile Include="src\NoiseRemovalDialog.cpp" />
@@ -63,6 +66,8 @@
     <ClCompile Include="src\ROIDialog.cpp" />
     <ClCompile Include="src\moc_ROIDialog.cpp" />
     <ClCompile Include="src\HistogramWidget.cpp" />
+    <ClCompile Include="src\SegmentationDialog.cpp" />
+    <ClCompile Include="src\ThresholdingDialog.cpp" />
     <ClCompile Include="src\TransformDialog.cpp" />
     <ClCompile Include="src\RightSidebarWidget.cpp" />
     <ClCompile Include="src\LayerManager.cpp" />
@@ -78,8 +83,13 @@
     <ClCompile Include="src\moc_AdjustmentDialog.cpp" />
     <ClCompile Include="src\qrc_fonts.cpp" />
     <ClCompile Include="src\FontAwesomeIcon.cpp" />
+    <ClCompile Include="lib\color\ColorProcessor.cpp" />
+    <ClCompile Include="src\ColorProcessingDialog.cpp" />
+    <ClCompile Include="src\moc_ColorProcessingDialog.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\ColorConversionDialog.h" />
+    <ClInclude Include="include\ColorProcessingDialog.h" />
     <ClInclude Include="include\MainWindow.h" />
     <ClInclude Include="include\ImageCanvas.h" />
     <ClInclude Include="include\ImageProcessor.h" />
@@ -92,6 +102,8 @@
     <ClInclude Include="include\ROIManager.h" />
     <ClInclude Include="include\ROIDialog.h" />
     <ClInclude Include="include\HistogramWidget.h" />
+    <ClInclude Include="include\SegmentationDialog.h" />
+    <ClInclude Include="include\ThresholdingDialog.h" />
     <ClInclude Include="include\TransformDialog.h" />
     <ClInclude Include="include\RightSidebarWidget.h" />
     <ClInclude Include="include\LayerManager.h" />
@@ -99,22 +111,39 @@
     <ClInclude Include="include\AdjustmentDialog.h" />
     <ClInclude Include="include\filters\ImageFilters.h" />
     <ClInclude Include="include\FontAwesomeIcon.h" />
+    <ClInclude Include="lib\color\ColorSpace.h" />
+    <ClInclude Include="lib\color\ColorProcessor.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="apply_phase13_edge_detectors.ps1" />
+    <None Include="BUILD_SUCCESS_SUMMARY.ps1" />
+    <None Include="build_with_moc.ps1" />
+    <None Include="complete_fix.ps1" />
     <None Include="CONSOLE_WARNINGS_FIX.md" />
+    <None Include="create_working_moc.ps1" />
+    <None Include="docs\Phase17_Quick_Reference.md" />
+    <None Include="docs\Phase17_Testing_Guide.md" />
+    <None Include="final_moc_build.ps1" />
     <None Include="FONT_AWESOME_SUCCESS.md" />
+    <None Include="generate_moc.ps1" />
+    <None Include="generate_moc_proper.ps1" />
+    <None Include="gen_threshold_moc.ps1" />
     <None Include="ICON_SYSTEM_FINAL.md" />
     <None Include="PHASE11_ZOOM_PAN_COMPLETE.md" />
     <None Include="PHASE11_ZOOM_PAN_PLAN.md" />
     <None Include="PHASE12_ROI_COMPLETE.md" />
     <None Include="PHASE12_SUCCESS_REPORT.md" />
+    <None Include="PHASE13_EDGE_DETECTORS_COMPLETE.md" />
+    <None Include="PHASE13_QUICK_START.md" />
     <None Include="PHASE8_AUTO_ENHANCE_COMPLETE.md" />
     <None Include="PHASE8_GITHUB_UPLOAD.md" />
     <None Include="PHASE9_NOISE_REMOVAL_COMPLETE.md" />
     <None Include="PROJECT_COMPLETE.md" />
     <None Include="QUICK_FIX.md" />
+    <None Include="regenerate_moc_and_build.ps1" />
     <None Include="scripts\add_new_files.ps1" />
+    <None Include="update_project_threshold.ps1" />
+    <None Include="use_qt_moc.ps1" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="FIX_DRAWING_CRASH.txt" />

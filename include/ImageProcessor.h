@@ -50,6 +50,27 @@ public:
     static void translate(const cv::Mat& src, cv::Mat& dst, int tx, int ty);
     static void rotate(const cv::Mat& src, cv::Mat& dst, double angle);
     static void zoom(const cv::Mat& src, cv::Mat& dst, double scale);
+    
+    // ========== PHASE 16: THRESHOLDING & SEGMENTATION =========
+    
+    // Simple thresholding
+    static void applySimpleThreshold(const cv::Mat& src, cv::Mat& dst, int threshold, int maxValue);
+    
+    // Adaptive thresholding
+    static void applyAdaptiveThreshold(const cv::Mat& src, cv::Mat& dst, int maxValue, 
+                                       int blockSize, int C, bool useGaussian = false);
+    
+    // Otsu thresholding (returns computed threshold)
+    static double computeOtsuThreshold(const cv::Mat& src, cv::Mat& dst);
+    
+    // Multi-level Otsu
+    static void applyMultiLevelOtsu(const cv::Mat& src, cv::Mat& dst, int levels = 2);
+    
+    // Local thresholding
+    static void applyLocalThreshold(const cv::Mat& src, cv::Mat& dst, int blockSize, int C);
+    
+    // Variable thresholding (dynamic threshold based on local statistics)
+    static void applyVariableThreshold(const cv::Mat& src, cv::Mat& dst, double k = 0.5);
 };
 
 #endif // IMAGEPROCESSOR_H

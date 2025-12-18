@@ -8,8 +8,8 @@ RightSidebarWidget::RightSidebarWidget(QWidget *parent)
     
     setFixedWidth(350);
     setStyleSheet(
-        "background: rgba(31, 21, 53, 0.95); "
-        "border-left: 2px solid rgba(232, 121, 249, 0.25);"
+        "background: rgba(30, 30, 36, 0.95); "
+        "border-left: 2px solid rgba(165, 148, 249, 0.25);"
     );
     
     setupUI();
@@ -27,23 +27,25 @@ void RightSidebarWidget::setupUI() {
     tabWidget->setStyleSheet(R"(
         QTabWidget::pane {
             border: none;
-            background: transparent;
+            background: rgba(30, 30, 36, 0.8);
         }
         QTabBar::tab {
-            background: rgba(45, 37, 71, 0.5);
-            color: #c4b5fd;
+            background: rgba(43, 45, 66, 0.6);
+            color: #B8BCC4;
             padding: 12px 24px;
             border: none;
             border-bottom: 2px solid transparent;
+            font-weight: 500;
         }
         QTabBar::tab:selected {
-            background: rgba(232, 121, 249, 0.15);
-            color: #e879f9;
-            border-bottom: 2px solid #e879f9;
+            background: rgba(165, 148, 249, 0.15);
+            color: #A594F9;
+            border-bottom: 2px solid #A594F9;
+            font-weight: 600;
         }
         QTabBar::tab:hover {
-            background: rgba(91, 75, 115, 0.4);
-            color: #e879f9;
+            background: rgba(74, 77, 98, 0.5);
+            color: #A594F9;
         }
     )");
     
@@ -55,11 +57,12 @@ void RightSidebarWidget::setupUI() {
 
 void RightSidebarWidget::createHistogramTab() {
     QWidget *histogramTab = new QWidget();
+    histogramTab->setStyleSheet("background: rgba(30, 30, 36, 0.8);");
     QVBoxLayout *layout = new QVBoxLayout(histogramTab);
     layout->setContentsMargins(15, 15, 15, 15);
     
     QLabel *title = new QLabel("Image Histogram");
-    title->setStyleSheet("font-size: 12pt; font-weight: 600; color: #e879f9; padding: 10px;");
+    title->setStyleSheet("font-size: 12pt; font-weight: 600; color: #A594F9; padding: 10px; background: transparent;");
     layout->addWidget(title);
     
     histogramWidget = new HistogramWidget(histogramTab);
@@ -73,57 +76,59 @@ void RightSidebarWidget::createHistogramTab() {
 
 void RightSidebarWidget::createLayersTab() {
     QWidget *layersTab = new QWidget();
+    layersTab->setStyleSheet("background: rgba(30, 30, 36, 0.8);");
     QVBoxLayout *layout = new QVBoxLayout(layersTab);
     layout->setContentsMargins(15, 15, 15, 15);
     
     QLabel *title = new QLabel("Processing Layers");
-    title->setStyleSheet("font-size: 12pt; font-weight: 600; color: #e879f9; padding: 10px;");
+    title->setStyleSheet("font-size: 12pt; font-weight: 600; color: #A594F9; padding: 10px; background: transparent;");
     layout->addWidget(title);
     
     layersListWidget = new QListWidget();
     layersListWidget->setSelectionMode(QAbstractItemView::MultiSelection);
     layersListWidget->setStyleSheet(R"(
         QListWidget {
-            background: rgba(45, 37, 71, 0.3);
-            border: 2px solid rgba(91, 75, 115, 0.5);
+            background: rgba(43, 45, 66, 0.4);
+            border: 2px solid rgba(165, 148, 249, 0.3);
             border-radius: 10px;
             padding: 8px;
-            color: #f3e8ff;
+            color: #EDF2F4;
         }
         QListWidget::item {
-            background: rgba(91, 75, 115, 0.3);
-            border: 1px solid rgba(232, 121, 249, 0.2);
+            background: rgba(58, 61, 82, 0.5);
+            border: 1px solid rgba(165, 148, 249, 0.25);
             border-radius: 6px;
             padding: 10px;
             margin: 4px;
+            color: #EDF2F4;
         }
         QListWidget::item:selected {
-            background: rgba(232, 121, 249, 0.3);
-            border: 1px solid #e879f9;
-            color: #e879f9;
+            background: rgba(165, 148, 249, 0.25);
+            border: 1px solid #A594F9;
+            color: #A594F9;
         }
         QListWidget::item:hover {
-            background: rgba(91, 75, 115, 0.5);
-            border: 1px solid rgba(232, 121, 249, 0.4);
+            background: rgba(74, 77, 98, 0.6);
+            border: 1px solid rgba(165, 148, 249, 0.4);
         }
         QCheckBox {
-            color: #f3e8ff;
+            color: #EDF2F4;
             spacing: 8px;
         }
         QCheckBox::indicator {
             width: 18px;
             height: 18px;
             border-radius: 4px;
-            border: 2px solid rgba(232, 121, 249, 0.5);
-            background: rgba(45, 37, 71, 0.5);
+            border: 2px solid rgba(165, 148, 249, 0.5);
+            background: rgba(43, 45, 66, 0.5);
         }
         QCheckBox::indicator:checked {
             background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                                       stop:0 #e879f9, stop:1 #c026d3);
-            border: 2px solid #e879f9;
+                                       stop:0 #A594F9, stop:1 #73D2DE);
+            border: 2px solid #A594F9;
         }
         QCheckBox::indicator:hover {
-            border: 2px solid #e879f9;
+            border: 2px solid #A594F9;
         }
     )");
     connect(layersListWidget, &QListWidget::itemChanged, 
@@ -135,9 +140,9 @@ void RightSidebarWidget::createLayersTab() {
     
     selectAllButton = new QPushButton("Select All");
     selectAllButton->setStyleSheet(
-        "background-color: rgba(91, 75, 115, 0.4); "
-        "color: #c4b5fd; "
-        "border: 1px solid rgba(232, 121, 249, 0.3); "
+        "background-color: rgba(58, 61, 82, 0.6); "
+        "color: #B8BCC4; "
+        "border: 1px solid rgba(165, 148, 249, 0.3); "
         "border-radius: 8px; "
         "padding: 8px 12px; "
         "font-weight: 600;"
@@ -147,9 +152,9 @@ void RightSidebarWidget::createLayersTab() {
     
     deselectAllButton = new QPushButton("Deselect All");
     deselectAllButton->setStyleSheet(
-        "background-color: rgba(91, 75, 115, 0.4); "
-        "color: #c4b5fd; "
-        "border: 1px solid rgba(232, 121, 249, 0.3); "
+        "background-color: rgba(58, 61, 82, 0.6); "
+        "color: #B8BCC4; "
+        "border: 1px solid rgba(165, 148, 249, 0.3); "
         "border-radius: 8px; "
         "padding: 8px 12px; "
         "font-weight: 600;"
@@ -161,9 +166,9 @@ void RightSidebarWidget::createLayersTab() {
     
     removeLayerButton = new QPushButton("Remove Selected Layers");
     removeLayerButton->setStyleSheet(
-        "background-color: rgba(251, 113, 133, 0.25); "
-        "color: #fb7185; "
-        "border: 1px solid rgba(251, 113, 133, 0.5); "
+        "background-color: rgba(231, 111, 81, 0.25); "
+        "color: #E76F51; "
+        "border: 1px solid rgba(231, 111, 81, 0.5); "
         "border-radius: 8px; "
         "padding: 10px; "
         "font-weight: 600;"
@@ -229,7 +234,7 @@ void RightSidebarWidget::updateLayersList() {
     // Add original image as base layer (not removable, no checkbox)
     QListWidgetItem *originalItem = new QListWidgetItem("[IMG] Original Image");
     originalItem->setData(Qt::UserRole, -1);
-    originalItem->setForeground(QBrush(QColor("#c4b5fd")));
+    originalItem->setForeground(QBrush(QColor("#B8BCC4")));
     originalItem->setFlags(originalItem->flags() & ~Qt::ItemIsUserCheckable);
     layersListWidget->addItem(originalItem);
     
@@ -240,11 +245,12 @@ void RightSidebarWidget::updateLayersList() {
         if (layers[i].type == "filter") icon = "[FLT]";
         else if (layers[i].type == "transform") icon = "[TRF]";
         else if (layers[i].type == "adjustment") icon = "[ADJ]";
+        else if (layers[i].type == "color") icon = "[CLR]";
         
         QListWidgetItem *item = new QListWidgetItem(
             QString("%1 %2").arg(icon).arg(layers[i].name));
         item->setData(Qt::UserRole, i);
-        item->setForeground(QBrush(QColor("#e879f9")));
+        item->setForeground(QBrush(QColor("#A594F9")));
         item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
         item->setCheckState(Qt::Unchecked);
         layersListWidget->addItem(item);

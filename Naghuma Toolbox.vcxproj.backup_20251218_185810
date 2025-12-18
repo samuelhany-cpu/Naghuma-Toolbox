@@ -1,5 +1,46 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <ProjectGuid>{E4A1F008-3C44-44BA-B5D4-46BC704BB57E}</ProjectGuid>
+    <RootNamespace>NaghumaToolbox</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)lib;F:\OpenCV\opencv\build\include;C:\Qt\6.7.3\msvc2019_64\include;C:\Qt\6.7.3\msvc2019_64\include\QtCore;C:\Qt\6.7.3\msvc2019_64\include\QtGui;C:\Qt\6.7.3\msvc2019_64\include\QtWidgets;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>F:\OpenCV\opencv\build\x64\vc15\lib;C:\Qt\6.7.3\msvc2019_64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opencv_world430d.lib;Qt6Cored.lib;Qt6Guid.lib;Qt6Widgetsd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="lib\color\ColorSpace.cpp" />
     <ClCompile Include="src\ColorConversionDialog.cpp" />
@@ -24,7 +65,6 @@
     <ClCompile Include="src\ROIDialog.cpp" />
     <ClCompile Include="src\moc_ROIDialog.cpp" />
     <ClCompile Include="src\HistogramWidget.cpp" />
-    <ClCompile Include="src\ThresholdingDialog.cpp" />
     <ClCompile Include="src\TransformDialog.cpp" />
     <ClCompile Include="src\RightSidebarWidget.cpp" />
     <ClCompile Include="src\LayerManager.cpp" />
@@ -43,7 +83,6 @@
     <ClCompile Include="lib\color\ColorProcessor.cpp" />
     <ClCompile Include="src\ColorProcessingDialog.cpp" />
     <ClCompile Include="src\moc_ColorProcessingDialog.cpp" />
-    <ClCompile Include="src\SegmentationDialog.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ColorConversionDialog.h" />
@@ -60,7 +99,6 @@
     <ClInclude Include="include\ROIManager.h" />
     <ClInclude Include="include\ROIDialog.h" />
     <ClInclude Include="include\HistogramWidget.h" />
-    <ClInclude Include="include\ThresholdingDialog.h" />
     <ClInclude Include="include\TransformDialog.h" />
     <ClInclude Include="include\RightSidebarWidget.h" />
     <ClInclude Include="include\LayerManager.h" />
@@ -70,11 +108,9 @@
     <ClInclude Include="include\FontAwesomeIcon.h" />
     <ClInclude Include="lib\color\ColorSpace.h" />
     <ClInclude Include="lib\color\ColorProcessor.h" />
-    <ClInclude Include="include\SegmentationDialog.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="apply_phase13_edge_detectors.ps1" />
-    <None Include="BUILD_SUCCESS_SUMMARY.ps1" />
     <None Include="build_with_moc.ps1" />
     <None Include="complete_fix.ps1" />
     <None Include="CONSOLE_WARNINGS_FIX.md" />
@@ -83,7 +119,6 @@
     <None Include="FONT_AWESOME_SUCCESS.md" />
     <None Include="generate_moc.ps1" />
     <None Include="generate_moc_proper.ps1" />
-    <None Include="gen_threshold_moc.ps1" />
     <None Include="ICON_SYSTEM_FINAL.md" />
     <None Include="PHASE11_ZOOM_PAN_COMPLETE.md" />
     <None Include="PHASE11_ZOOM_PAN_PLAN.md" />
@@ -96,15 +131,12 @@
     <None Include="PHASE9_NOISE_REMOVAL_COMPLETE.md" />
     <None Include="PROJECT_COMPLETE.md" />
     <None Include="QUICK_FIX.md" />
-    <None Include="regenerate_moc_and_build.ps1" />
     <None Include="scripts\add_new_files.ps1" />
-    <None Include="update_project_threshold.ps1" />
     <None Include="use_qt_moc.ps1" />
-    <None Include="docs\Phase17_Testing_Guide.md" />
-    <None Include="docs\Phase17_Quick_Reference.md" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="FIX_DRAWING_CRASH.txt" />
     <Text Include="phase13_functions.txt" />
   </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

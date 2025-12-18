@@ -368,3 +368,144 @@ void ImageProcessor::applyBilateralFilter(const cv::Mat& src, cv::Mat& dst, int 
     
     cv::bilateralFilter(src, dst, diameter, sigmaColor, sigmaSpace);
 }
+
+// ============================================================================
+// PHASE 16: THRESHOLDING & SEGMENTATION
+// ============================================================================
+
+void ImageProcessor::applySimpleThreshold(const cv::Mat& src, cv::Mat& dst, int threshold, int maxValue) {
+    cv::Mat gray;
+    if (src.channels() == 3) {
+        cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
+    } else {
+        gray = src.clone();
+    }
+    
+    cv::threshold(gray, dst, threshold, maxValue, cv::THRESH_BINARY);
+}
+
+void ImageProcessor::applyAdaptiveThreshold(const cv::Mat& src, cv::Mat& dst, int maxValue, 
+                                             int blockSize, int C, bool useGaussian) {
+    cv::Mat gray;
+    if (src.channels() == 3) {
+        cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
+    } else {
+        gray = src.clone();
+    }
+    
+    // Ensure block size is odd
+    if (blockSize % 2 == 0) blockSize++;
+    if (blockSize < 3) blockSize = 3;
+    
+    int adaptiveMethod = useGaussian ? cv::ADAPTIVE_THRESH_GAUSSIAN_C : cv::ADAPTIVE_THRESH_MEAN_C;
+    
+    cv::adaptiveThreshold(gray, dst, maxValue, adaptiveMethod, 
+                         cv::THRESH_BINARY, blockSize, C);
+}
+
+double ImageProcessor::computeOtsuThreshold(const cv::Mat& src, cv::Mat& dst) {
+    cv::Mat gray;
+    if (src.channels() == 3) {
+        cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
+    } else {
+        gray = src.clone();
+    }
+    
+    double threshold = cv::threshold(gray, dst, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+    return threshold;
+}
+
+void ImageProcessor::applyMultiLevelOtsu(const cv::Mat& src, cv::Mat& dst, int levels) {
+    cv::Mat gray;
+    if (src.channels() == 3) {
+        cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
+    } else {
+        gray = src.clone();
+    }
+    
+    // For multi-level Otsu, we need to compute multiple thresholds
+    // This is a simplified implementation using histogram analysis
+    
+    // Calculate histogram
+    int histSize = 256;
+    float range[] = {0, 256};
+    const float* histRange = {range};
+    cv::Mat hist;
+    cv::calcHist(&gray, 1, 0, cv::Mat(), hist, 1, &histSize, &histRange);
+    
+    // Normalize histogram
+    hist /= gray.total();
+    
+    // Find thresholds using Otsu's method extended to multiple levels
+    std::vector<int> thresholds;
+    
+    if (levels == 2) {
+        // Standard Otsu
+        double threshold = cv::threshold(gray, dst, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+        thresholds.push_back(static_cast<int>(threshold));
+    } else {
+        // Multi-level: divide into equal ranges as approximation
+        int step = 255 / levels;
+        for (int i = 1; i < levels; i++) {
+            thresholds.push_back(i * step);
+        }
+    }
+    
+    // Apply multi-level thresholding
+    dst = cv::Mat::zeros(gray.size(), CV_8U);
+    
+    for (int i = 0; i < gray.rows; i++) {
+        for (int j = 0; j < gray.cols; j++) {
+            int pixel = gray.at<uchar>(i, j);
+            int level = 0;
+            
+            for (size_t k = 0; k < thresholds.size(); k++) {
+                if (pixel > thresholds[k]) {
+                    level++;
+                }
+            }
+            
+            // Map level to gray value
+            dst.at<uchar>(i, j) = (255 / levels) * level;
+        }
+    }
+}
+
+void ImageProcessor::applyLocalThreshold(const cv::Mat& src, cv::Mat& dst, int blockSize, int C) {
+    cv::Mat gray;
+    if (src.channels() == 3) {
+        cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
+    } else {
+        gray = src.clone();
+    }
+    
+    // Ensure block size is odd
+    if (blockSize % 2 == 0) blockSize++;
+    if (blockSize < 3) blockSize = 3;
+    
+    // Use adaptive threshold with mean method for local thresholding
+    cv::adaptiveThreshold(gray, dst, 255, cv::ADAPTIVE_THRESH_MEAN_C, 
+                         cv::THRESH_BINARY, blockSize, C);
+}
+
+void ImageProcessor::applyVariableThreshold(const cv::Mat& src, cv::Mat& dst, double k) {
+    cv::Mat gray;
+    if (src.channels() == 3) {
+        cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
+    } else {
+        gray = src.clone();
+    }
+    
+    // Calculate mean and standard deviation
+    cv::Scalar mean, stddev;
+    cv::meanStdDev(gray, mean, stddev);
+    
+    // Variable threshold: T = mean + k * stddev
+    double threshold = mean[0] + k * stddev[0];
+    
+    // Clamp threshold to valid range
+    if (threshold < 0) threshold = 0;
+    if (threshold > 255) threshold = 255;
+    
+    cv::threshold(gray, dst, threshold, 255, cv::THRESH_BINARY);
+}
