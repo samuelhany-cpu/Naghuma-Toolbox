@@ -472,7 +472,7 @@ void FeatureDetectionDialog::detectShiTomasiCorners() {
     
     // Draw corners
     previewImage = inputImage.clone();
-    featureCount = corners.size();
+    featureCount = static_cast<int>(corners.size());
     
     for (const auto& corner : corners) {
         cv::circle(previewImage, corner, 5, cv::Scalar(0, 255, 0), 2);
@@ -497,7 +497,7 @@ void FeatureDetectionDialog::detectFASTCorners() {
     int threshold = fastThresholdSpin->value();
     bool nonMaxSuppression = fastNonMaxSuppressionCheck->isChecked();
     
-    int fastType = cv::FastFeatureDetector::TYPE_9_16;
+    cv::FastFeatureDetector::DetectorType fastType = cv::FastFeatureDetector::TYPE_9_16;
     switch (fastTypeCombo->currentIndex()) {
         case 0: fastType = cv::FastFeatureDetector::TYPE_9_16; break;
         case 1: fastType = cv::FastFeatureDetector::TYPE_7_12; break;
@@ -516,7 +516,7 @@ void FeatureDetectionDialog::detectFASTCorners() {
     cv::drawKeypoints(previewImage, keypoints, previewImage, cv::Scalar(0, 255, 0),
                      cv::DrawMatchesFlags::DRAW_OVER_OUTIMG);
     
-    featureCount = keypoints.size();
+    featureCount = static_cast<int>(keypoints.size());
     detectionType = QString("FAST Corners (threshold=%1)").arg(threshold);
     infoLabel->setText(QString("FAST detection: %1 corners found").arg(featureCount));
     infoLabel->setStyleSheet("color: #a78bfa; padding: 5px;");
@@ -553,7 +553,7 @@ void FeatureDetectionDialog::detectORBFeatures() {
     cv::drawKeypoints(previewImage, keypoints, previewImage, cv::Scalar(0, 255, 0),
                      cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
     
-    featureCount = keypoints.size();
+    featureCount = static_cast<int>(keypoints.size());
     detectionType = QString("ORB Features (max=%1)").arg(nfeatures);
     infoLabel->setText(QString("ORB detection: %1 features with descriptors").arg(featureCount));
     infoLabel->setStyleSheet("color: #a78bfa; padding: 5px;");
