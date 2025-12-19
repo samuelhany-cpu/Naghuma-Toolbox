@@ -132,6 +132,9 @@ private slots:
     
     // Phase 19: Feature Detection - NEW
     void showFeatureDetectionDialog();
+    
+    // Phase 19: Advanced Frequency Filters - NEW
+    void showFrequencyFilterDialog();
 
     // Morphology Operations
     void applyErosion();

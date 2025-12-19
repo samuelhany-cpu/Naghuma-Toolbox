@@ -54,7 +54,10 @@
     <ClCompile Include="src\moc_CompressionDialog.cpp" />
     <ClCompile Include="src\moc_SegmentationDialog.cpp" />
         <ClCompile Include="src\FeatureDetectionDialog.cpp" />
+    <ClCompile Include="src\FrequencyFilterDialog.cpp" />
     <ClCompile Include="src\moc_FeatureDetectionDialog.cpp" />
+    <ClCompile Include="src\FrequencyFilterDialog.cpp" />
+    <ClCompile Include="src\moc_FrequencyFilterDialog.cpp" />
     <ClCompile Include="src\AutoEnhanceDialog.cpp" />
     <ClCompile Include="src\moc_AutoEnhanceDialog.cpp" />
     <ClCompile Include="src\NoiseRemovalDialog.cpp" />
@@ -106,6 +109,7 @@
     <ClInclude Include="include\HistogramWidget.h" />
     <ClInclude Include="include\SegmentationDialog.h" />
     <ClInclude Include="include\FeatureDetectionDialog.h" />
+    <ClInclude Include="include\FrequencyFilterDialog.h" />
     <ClInclude Include="include\ThresholdingDialog.h" />
     <ClInclude Include="include\TransformDialog.h" />
     <ClInclude Include="include\RightSidebarWidget.h" />

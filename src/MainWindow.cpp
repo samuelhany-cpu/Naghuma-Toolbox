@@ -23,6 +23,7 @@
 #include "ThresholdingDialog.h"  // Phase 16
 #include "SegmentationDialog.h"  // Phase 17
 #include "FeatureDetectionDialog.h"  // Phase 19
+#include "FrequencyFilterDialog.h"  // Phase 19 - Frequency Filters
 #include <QApplication>
 #include <QScreen>
 #include <QVBoxLayout>
@@ -209,6 +210,8 @@ void MainWindow::createMenuBar() {
     fftMenu->addSeparator();
     ADD_MENU_ACTION(fftMenu, "Low-Pass Filter", applyLowPassFilter);
     ADD_MENU_ACTION(fftMenu, "High-Pass Filter", applyHighPassFilter);
+    fftMenu->addSeparator();
+    ADD_MENU_ACTION(fftMenu, "Advanced Frequency Filters...", showFrequencyFilterDialog);
     
     // View Menu - NEW
     QMenu *viewMenu = menuBar->addMenu("View");
@@ -2686,6 +2689,50 @@ void MainWindow::showFeatureDetectionDialog() {
         }
         
         updateStatus(QString("Feature detection: %1 features found").arg(featureCount), "success");
+    } else {
+        processedImage = cv::Mat();
+        recentlyProcessed = false;
+        processedCanvas->clear();
+        updateDisplay();
+    }
+}
+
+// ============================================================================
+// PHASE 19: ADVANCED FREQUENCY FILTERS
+// ============================================================================
+
+void MainWindow::showFrequencyFilterDialog() {
+    if (!checkImageLoaded("apply frequency filtering")) return;
+    
+    FrequencyFilterDialog dialog(currentImage, this);
+    
+    // Connect preview signal
+    connect(&dialog, &FrequencyFilterDialog::previewUpdated, this, [this](const cv::Mat& preview) {
+        processedImage = preview.clone();
+        recentlyProcessed = true;
+        updateDisplay();
+    });
+    
+    if (dialog.exec() == QDialog::Accepted && dialog.wasApplied()) {
+        processedImage = dialog.getFilteredImage();
+        recentlyProcessed = true;
+        updateDisplay();
+        
+        QString filterType = dialog.getFilterType();
+        
+        if (!processedImage.empty()) {
+            currentImage = processedImage.clone();
+            rightSidebar->addLayer(
+                QString("Frequency: %1").arg(filterType),
+                "frequency",
+                processedImage,
+                nullptr
+            );
+            rightSidebar->updateHistogram(processedImage);
+            updateUndoButtonState();
+        }
+        
+        updateStatus(QString("%1 applied successfully!").arg(filterType), "success");
     } else {
         processedImage = cv::Mat();
         recentlyProcessed = false;
