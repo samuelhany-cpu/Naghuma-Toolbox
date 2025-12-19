@@ -33,6 +33,7 @@
 #include "color/ColorSpace.h"
 #include "color/ColorProcessor.h"  // Add this line
 #include "ImageMetrics.h"
+#include "WaveletDialog.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), imageLoaded(false), recentlyProcessed(false), cropMode(false) {
@@ -212,6 +213,8 @@ void MainWindow::createMenuBar() {
     ADD_MENU_ACTION(fftMenu, "High-Pass Filter", applyHighPassFilter);
     fftMenu->addSeparator();
     ADD_MENU_ACTION(fftMenu, "Advanced Frequency Filters...", showFrequencyFilterDialog);
+    QMenu* waveletMenu = menuBar->addMenu("Wavelet");
+    ADD_MENU_ACTION(waveletMenu, "Wavelet Transform...", showWaveletDialog);
     
     // View Menu - NEW
     QMenu *viewMenu = menuBar->addMenu("View");
@@ -600,6 +603,44 @@ void MainWindow::onLayerRemoveRequested(int layerIndex) {
             .arg(rightSidebar->getLayerCount()), "success");
     }
 }
+
+// Wavelet Handler
+void MainWindow::showWaveletDialog() {
+       if (!checkImageLoaded("apply wavelet transform")) return;
+       
+       WaveletDialog dialog(currentImage, this);
+       
+       connect(&dialog, &WaveletDialog::previewUpdated, this, [this](const cv::Mat& preview) {
+           processedImage = preview.clone();
+           recentlyProcessed = true;
+           updateDisplay();
+       });
+       
+       if (dialog.exec() == QDialog::Accepted && dialog.wasApplied()) {
+           processedImage = dialog.getProcessedImage();
+           recentlyProcessed = true;
+           
+           if (!processedImage.empty()) {
+               currentImage = processedImage.clone();
+               rightSidebar->addLayer(
+                   QString("Wavelet: %1").arg(dialog.getOperationType()),
+                   "wavelet",
+                   processedImage,
+                   nullptr
+               );
+               rightSidebar->updateHistogram(processedImage);
+               updateUndoButtonState();
+           }
+           
+           updateDisplay();
+           updateStatus(QString("%1 applied successfully!").arg(dialog.getOperationType()), "success");
+       } else {
+           processedImage = cv::Mat();
+           recentlyProcessed = false;
+           processedCanvas->clear();
+           updateDisplay();
+       }
+   }
 
 void MainWindow::onLayersRemoveRequested(const QList<int>& layerIndices) {
     if (layerIndices.isEmpty()) return;

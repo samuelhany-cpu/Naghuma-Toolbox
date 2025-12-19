@@ -4,71 +4,74 @@
 #include <QComboBox>
 #include <QPushButton>
 #include <QLabel>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
+#include <QSlider>
+#include <QSpinBox>
+#include <QGroupBox>
 #include <opencv2/opencv.hpp>
+#include "WaveletTransform.h"
 
 class ImageCanvas;
 
 /**
- * @brief Dialog for interactive color space conversion with live preview
+ * @brief Dialog for wavelet transform and denoising with live preview
  */
-class ColorConversionDialog : public QDialog {
+class WaveletDialog : public QDialog {
     Q_OBJECT
     
 public:
-    explicit ColorConversionDialog(const cv::Mat& image, QWidget *parent = nullptr);
-    ~ColorConversionDialog();
+    explicit WaveletDialog(const cv::Mat& image, QWidget *parent = nullptr);
+    ~WaveletDialog();
     
     // Getters
-    cv::Mat getConvertedImage() const { return convertedImage; }
-    QString getSourceColorSpace() const;
-    QString getTargetColorSpace() const;
+    cv::Mat getProcessedImage() const { return processedImage; }
+    QString getOperationType() const { return operationType; }
     bool wasApplied() const { return applied; }
     
 signals:
     void previewUpdated(const cv::Mat& preview);
     
 private slots:
-    void onSourceColorSpaceChanged(int index);
-    void onTargetColorSpaceChanged(int index);
+    void onOperationChanged(int index);
+    void onWaveletTypeChanged(int index);
+    void onThresholdMethodChanged(int index);
+    void onParameterChanged();
     void onApplyClicked();
-    void onCancelClicked();
-    void onShowChannelsToggled(bool checked);
+    void onResetClicked();
     
 private:
     // UI Components
-    QComboBox *sourceColorSpaceCombo;
-    QComboBox *targetColorSpaceCombo;
+    QComboBox *operationCombo;
+    QComboBox *waveletTypeCombo;
+    QComboBox *thresholdMethodCombo;
+    
+    QSlider *thresholdSlider;
+    QLabel *thresholdLabel;
+    
+    QSpinBox *levelsSpinBox;
+    
     QPushButton *applyButton;
-    QPushButton *cancelButton;
-    QPushButton *showChannelsButton;
+    QPushButton *resetButton;
     QLabel *infoLabel;
+    
+    QWidget *denoiseParams;
+    QWidget *decompositionParams;
     
     // Image canvases
     ImageCanvas *originalCanvas;
-    ImageCanvas *convertedCanvas;
-    
-    // Channel visualization canvases
-    ImageCanvas *channel1Canvas;
-    ImageCanvas *channel2Canvas;
-    ImageCanvas *channel3Canvas;
-    QLabel *channel1Label;
-    QLabel *channel2Label;
-    QLabel *channel3Label;
-    QWidget *channelsWidget;
+    ImageCanvas *processedCanvas;
+    ImageCanvas *decompositionCanvas;
     
     // Image data
     cv::Mat originalImage;
-    cv::Mat convertedImage;
-    cv::Mat currentSourceImage;
+    cv::Mat processedImage;
+    cv::Mat decompositionVisualization;
+    QString operationType;
     bool applied;
-    bool channelsVisible;
     
     // Helper methods
     void setupUI();
-    void updateConversion();
-    void updateChannelVisualization();
-    void populateColorSpaces();
-    QString getChannelName(const QString& colorSpace, int channelIndex);
+    void updatePreview();
+    void performDenoising();
+    void performDecomposition();
+    void performReconstruction();
 };

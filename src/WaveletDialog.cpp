@@ -1,309 +1,428 @@
-#include "ColorConversionDialog.h"
+#include "WaveletDialog.h"
 #include "ImageCanvas.h"
-#include "color/ColorSpace.h"
-#include <QGridLayout>
+#include "Theme.h"
+#include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QGroupBox>
+#include <QMessageBox>
+#include <QStackedWidget>
 
-ColorConversionDialog::ColorConversionDialog(const cv::Mat& image, QWidget *parent)
-    : QDialog(parent), originalImage(image.clone()), applied(false), channelsVisible(false) {
+WaveletDialog::WaveletDialog(const cv::Mat& image, QWidget *parent)
+    : QDialog(parent), originalImage(image.clone()), applied(false) {
     
-    setWindowTitle("Color Space Conversion");
-    setMinimumSize(1200, 700);
-    
-    currentSourceImage = originalImage.clone();
+    setWindowTitle("Wavelet Transform - Phase 20");
+    setMinimumSize(1200, 800);
     
     setupUI();
-    updateConversion();
+    onOperationChanged(0);
 }
 
-ColorConversionDialog::~ColorConversionDialog() {
+WaveletDialog::~WaveletDialog() {
 }
 
-void ColorConversionDialog::setupUI() {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+void WaveletDialog::setupUI() {
+    QVBoxLayout* mainLayout = new QVBoxLayout(this);
     
     // Title
-    QLabel *title = new QLabel("Interactive Color Space Converter");
-    title->setStyleSheet("font-size: 16pt; font-weight: bold; color: #e879f9; padding: 10px;");
-    title->setAlignment(Qt::AlignCenter);
-    mainLayout->addWidget(title);
+    QLabel* titleLabel = new QLabel("Wavelet Transform & Denoising");
+    titleLabel->setStyleSheet("font-size: 16pt; font-weight: bold; color: #e879f9; padding: 10px;");
+    mainLayout->addWidget(titleLabel);
     
-    // Color space selection
-    QHBoxLayout *selectionLayout = new QHBoxLayout();
+    // Operation selection
+    QHBoxLayout* opLayout = new QHBoxLayout();
+    QLabel* opLabel = new QLabel("Operation:");
+    opLabel->setStyleSheet("color: #c4b5fd; font-weight: bold;");
+    operationCombo = new QComboBox();
+    operationCombo->addItem("Wavelet Denoising");
+    operationCombo->addItem("Decomposition (1 Level)");
+    operationCombo->addItem("Decomposition Visualization");
+    connect(operationCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &WaveletDialog::onOperationChanged);
+    opLayout->addWidget(opLabel);
+    opLayout->addWidget(operationCombo, 1);
+    mainLayout->addLayout(opLayout);
     
-    selectionLayout->addWidget(new QLabel("Source Color Space:"));
-    sourceColorSpaceCombo = new QComboBox();
-    populateColorSpaces();
-    sourceColorSpaceCombo->setCurrentText("RGB");
-    connect(sourceColorSpaceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &ColorConversionDialog::onSourceColorSpaceChanged);
-    selectionLayout->addWidget(sourceColorSpaceCombo);
+    // Wavelet type selection
+    QHBoxLayout* waveletLayout = new QHBoxLayout();
+    QLabel* waveletLabel = new QLabel("Wavelet Type:");
+    waveletLabel->setStyleSheet("color: #c4b5fd; font-weight: bold;");
+    waveletTypeCombo = new QComboBox();
+    waveletTypeCombo->addItem("Haar");
+    waveletTypeCombo->addItem("Daubechies-2 (DB2)");
+    waveletTypeCombo->addItem("Daubechies-4 (DB4)");
+    waveletTypeCombo->addItem("Daubechies-6 (DB6)");
+    connect(waveletTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &WaveletDialog::onWaveletTypeChanged);
+    waveletLayout->addWidget(waveletLabel);
+    waveletLayout->addWidget(waveletTypeCombo, 1);
+    mainLayout->addLayout(waveletLayout);
     
-    selectionLayout->addWidget(new QLabel("  ?  "));
+    // Parameters area with stacked widget
+    QGroupBox* paramsGroup = new QGroupBox("Parameters");
+    paramsGroup->setStyleSheet(
+        "QGroupBox { color: #c4b5fd; font-weight: bold; border: 2px solid rgba(91, 75, 115, 0.5); "
+        "border-radius: 8px; margin-top: 10px; padding: 15px; }"
+        "QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 5px; }"
+    );
+    QVBoxLayout* paramsLayout = new QVBoxLayout(paramsGroup);
     
-    selectionLayout->addWidget(new QLabel("Target Color Space:"));
-    targetColorSpaceCombo = new QComboBox();
-    targetColorSpaceCombo->addItems({"RGB", "HSV", "LAB", "YCbCr", "HSI", "Grayscale"});
-    targetColorSpaceCombo->setCurrentText("HSV");
-    connect(targetColorSpaceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &ColorConversionDialog::onTargetColorSpaceChanged);
-    selectionLayout->addWidget(targetColorSpaceCombo);
+    QStackedWidget* stackedParams = new QStackedWidget();
     
-    selectionLayout->addStretch();
-    mainLayout->addLayout(selectionLayout);
+    // === DENOISING PARAMETERS ===
+    denoiseParams = new QWidget();
+    QVBoxLayout* denoiseLayout = new QVBoxLayout(denoiseParams);
     
-    // Info label
-    infoLabel = new QLabel();
-    infoLabel->setStyleSheet("color: #c4b5fd; padding: 5px; font-size: 10pt;");
-    infoLabel->setAlignment(Qt::AlignCenter);
-    mainLayout->addWidget(infoLabel);
+    QHBoxLayout* thresholdLayout = new QHBoxLayout();
+    QLabel* thresholdLabelText = new QLabel("Threshold:");
+    thresholdLabelText->setStyleSheet("color: #c4b5fd;");
+    thresholdSlider = new QSlider(Qt::Horizontal);
+    thresholdSlider->setRange(1, 100);
+    thresholdSlider->setValue(20);
+    thresholdLabel = new QLabel("20");
+    thresholdLabel->setStyleSheet("color: #a78bfa; min-width: 60px;");
+    connect(thresholdSlider, &QSlider::valueChanged, this, [this](int value) {
+        thresholdLabel->setText(QString::number(value));
+        onParameterChanged();
+    });
+    thresholdLayout->addWidget(thresholdLabelText);
+    thresholdLayout->addWidget(thresholdSlider);
+    thresholdLayout->addWidget(thresholdLabel);
+    denoiseLayout->addLayout(thresholdLayout);
     
-    // Image comparison
-    QHBoxLayout *imagesLayout = new QHBoxLayout();
+    QHBoxLayout* methodLayout = new QHBoxLayout();
+    QLabel* methodLabel = new QLabel("Thresholding Method:");
+    methodLabel->setStyleSheet("color: #c4b5fd;");
+    thresholdMethodCombo = new QComboBox();
+    thresholdMethodCombo->addItem("Soft Thresholding");
+    thresholdMethodCombo->addItem("Hard Thresholding");
+    connect(thresholdMethodCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &WaveletDialog::onThresholdMethodChanged);
+    methodLayout->addWidget(methodLabel);
+    methodLayout->addWidget(thresholdMethodCombo);
+    methodLayout->addStretch();
+    denoiseLayout->addLayout(methodLayout);
     
-    // Original
-    QVBoxLayout *originalLayout = new QVBoxLayout();
-    QLabel *originalTitle = new QLabel("Original (RGB)");
-    originalTitle->setStyleSheet("font-weight: bold; color: #e879f9;");
-    originalTitle->setAlignment(Qt::AlignCenter);
-    originalLayout->addWidget(originalTitle);
+    QHBoxLayout* levelsLayout = new QHBoxLayout();
+    QLabel* levelsLabel = new QLabel("Decomposition Levels:");
+    levelsLabel->setStyleSheet("color: #c4b5fd;");
+    levelsSpinBox = new QSpinBox();
+    levelsSpinBox->setRange(1, 5);
+    levelsSpinBox->setValue(3);
+    connect(levelsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
+            this, &WaveletDialog::onParameterChanged);
+    levelsLayout->addWidget(levelsLabel);
+    levelsLayout->addWidget(levelsSpinBox);
+    levelsLayout->addStretch();
+    denoiseLayout->addLayout(levelsLayout);
     
+    QLabel* denoiseInfo = new QLabel(
+        "Threshold: Controls noise removal strength (higher = more aggressive).\n"
+        "Soft: Shrinks coefficients gradually (smoother results).\n"
+        "Hard: Removes coefficients below threshold completely.\n"
+        "Levels: Number of wavelet decomposition levels (1-5)."
+    );
+    denoiseInfo->setStyleSheet("color: #a78bfa; font-size: 9pt; padding: 10px;");
+    denoiseLayout->addWidget(denoiseInfo);
+    denoiseLayout->addStretch();
+    
+    stackedParams->addWidget(denoiseParams);
+    
+    // === DECOMPOSITION PARAMETERS ===
+    decompositionParams = new QWidget();
+    QVBoxLayout* decompositionLayout = new QVBoxLayout(decompositionParams);
+    
+    QLabel* decompInfo = new QLabel(
+        "Wavelet Decomposition splits image into 4 sub-bands:\n"
+        "• Approximation (top-left): Low-frequency content\n"
+        "• Horizontal Details (top-right): Horizontal edges\n"
+        "• Vertical Details (bottom-left): Vertical edges\n"
+        "• Diagonal Details (bottom-right): Diagonal features\n\n"
+        "Select 'Decomposition Visualization' to see all components."
+    );
+    decompInfo->setStyleSheet("color: #a78bfa; font-size: 9pt; padding: 10px;");
+    decompositionLayout->addWidget(decompInfo);
+    decompositionLayout->addStretch();
+    
+    stackedParams->addWidget(decompositionParams);
+    
+    paramsLayout->addWidget(stackedParams);
+    mainLayout->addWidget(paramsGroup);
+    
+    // Connect stacked widget switching
+    connect(operationCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            [this, stackedParams](int index) {
+        if (index == 0) {
+            stackedParams->setCurrentWidget(denoiseParams);
+        } else {
+            stackedParams->setCurrentWidget(decompositionParams);
+        }
+    });
+    
+    // Image display area
+    QHBoxLayout* imagesLayout = new QHBoxLayout();
+    
+    QVBoxLayout* originalLayout = new QVBoxLayout();
+    QLabel* originalLabel = new QLabel("Original Image");
+    originalLabel->setStyleSheet("color: #c4b5fd; font-weight: bold;");
+    originalLabel->setAlignment(Qt::AlignCenter);
     originalCanvas = new ImageCanvas(this, "#e879f9");
-    originalCanvas->setMinimumSize(400, 300);
+    originalCanvas->setMinimumSize(400, 350);
     originalCanvas->setImage(originalImage);
+    originalLayout->addWidget(originalLabel);
     originalLayout->addWidget(originalCanvas);
     imagesLayout->addLayout(originalLayout);
     
-    // Converted
-    QVBoxLayout *convertedLayout = new QVBoxLayout();
-    QLabel *convertedTitle = new QLabel("Converted");
-    convertedTitle->setStyleSheet("font-weight: bold; color: #c026d3;");
-    convertedTitle->setAlignment(Qt::AlignCenter);
-    convertedLayout->addWidget(convertedTitle);
-    
-    convertedCanvas = new ImageCanvas(this, "#c026d3");
-    convertedCanvas->setMinimumSize(400, 300);
-    convertedLayout->addWidget(convertedCanvas);
-    imagesLayout->addLayout(convertedLayout);
+    QVBoxLayout* processedLayout = new QVBoxLayout();
+    QLabel* processedLabel = new QLabel("Processed Result");
+    processedLabel->setStyleSheet("color: #c026d3; font-weight: bold;");
+    processedLabel->setAlignment(Qt::AlignCenter);
+    processedCanvas = new ImageCanvas(this, "#c026d3");
+    processedCanvas->setMinimumSize(400, 350);
+    processedLayout->addWidget(processedLabel);
+    processedLayout->addWidget(processedCanvas);
+    imagesLayout->addLayout(processedLayout);
     
     mainLayout->addLayout(imagesLayout);
     
-    // Channel visualization (initially hidden)
-    channelsWidget = new QWidget();
-    QHBoxLayout *channelsLayout = new QHBoxLayout(channelsWidget);
-    
-    // Channel 1
-    QVBoxLayout *ch1Layout = new QVBoxLayout();
-    channel1Label = new QLabel("Channel 1");
-    channel1Label->setAlignment(Qt::AlignCenter);
-    channel1Label->setStyleSheet("color: #ff6b6b; font-weight: bold;");
-    ch1Layout->addWidget(channel1Label);
-    channel1Canvas = new ImageCanvas(this, "#ff6b6b");
-    channel1Canvas->setFixedSize(250, 200);
-    ch1Layout->addWidget(channel1Canvas);
-    channelsLayout->addLayout(ch1Layout);
-    
-    // Channel 2
-    QVBoxLayout *ch2Layout = new QVBoxLayout();
-    channel2Label = new QLabel("Channel 2");
-    channel2Label->setAlignment(Qt::AlignCenter);
-    channel2Label->setStyleSheet("color: #4ecdc4; font-weight: bold;");
-    ch2Layout->addWidget(channel2Label);
-    channel2Canvas = new ImageCanvas(this, "#4ecdc4");
-    channel2Canvas->setFixedSize(250, 200);
-    ch2Layout->addWidget(channel2Canvas);
-    channelsLayout->addLayout(ch2Layout);
-    
-    // Channel 3
-    QVBoxLayout *ch3Layout = new QVBoxLayout();
-    channel3Label = new QLabel("Channel 3");
-    channel3Label->setAlignment(Qt::AlignCenter);
-    channel3Label->setStyleSheet("color: #ffe66d; font-weight: bold;");
-    ch3Layout->addWidget(channel3Label);
-    channel3Canvas = new ImageCanvas(this, "#ffe66d");
-    channel3Canvas->setFixedSize(250, 200);
-    ch3Layout->addWidget(channel3Canvas);
-    channelsLayout->addLayout(ch3Layout);
-    
-    channelsWidget->setVisible(false);
-    mainLayout->addWidget(channelsWidget);
+    // Info label
+    infoLabel = new QLabel("Adjust parameters to see results");
+    infoLabel->setStyleSheet("color: #a78bfa; padding: 5px;");
+    infoLabel->setAlignment(Qt::AlignCenter);
+    mainLayout->addWidget(infoLabel);
     
     // Buttons
-    QHBoxLayout *buttonLayout = new QHBoxLayout();
-    
-    showChannelsButton = new QPushButton("Show Channels");
-    showChannelsButton->setCheckable(true);
-    showChannelsButton->setMaximumWidth(150);
-    connect(showChannelsButton, &QPushButton::toggled, this, &ColorConversionDialog::onShowChannelsToggled);
-    buttonLayout->addWidget(showChannelsButton);
-    
+    QHBoxLayout* buttonLayout = new QHBoxLayout();
     buttonLayout->addStretch();
     
-    cancelButton = new QPushButton("Cancel");
-    cancelButton->setMaximumWidth(120);
-    connect(cancelButton, &QPushButton::clicked, this, &ColorConversionDialog::onCancelClicked);
+    resetButton = new QPushButton("Reset");
+    resetButton->setMinimumWidth(100);
+    connect(resetButton, &QPushButton::clicked, this, &WaveletDialog::onResetClicked);
+    buttonLayout->addWidget(resetButton);
+    
+    QPushButton* cancelButton = new QPushButton("Cancel");
+    cancelButton->setMinimumWidth(100);
+    connect(cancelButton, &QPushButton::clicked, this, &QDialog::reject);
     buttonLayout->addWidget(cancelButton);
     
     applyButton = new QPushButton("Apply");
     applyButton->setProperty("class", "accent");
-    applyButton->setMaximumWidth(120);
-    connect(applyButton, &QPushButton::clicked, this, &ColorConversionDialog::onApplyClicked);
+    applyButton->setMinimumWidth(100);
+    connect(applyButton, &QPushButton::clicked, this, &WaveletDialog::onApplyClicked);
     buttonLayout->addWidget(applyButton);
     
     mainLayout->addLayout(buttonLayout);
 }
 
-void ColorConversionDialog::populateColorSpaces() {
-    sourceColorSpaceCombo->addItems({"RGB", "HSV", "LAB", "YCbCr", "HSI", "Grayscale"});
+void WaveletDialog::onOperationChanged(int index) {
+    updatePreview();
 }
 
-void ColorConversionDialog::onSourceColorSpaceChanged(int index) {
-    // Convert original image to selected source color space
-    QString sourceSpace = sourceColorSpaceCombo->currentText();
-    
-    if (sourceSpace == "RGB") {
-        currentSourceImage = originalImage.clone();
-    } else if (sourceSpace == "HSV") {
-        ColorSpace::RGBtoHSV(originalImage, currentSourceImage);
-    } else if (sourceSpace == "LAB") {
-        ColorSpace::RGBtoLAB(originalImage, currentSourceImage);
-    } else if (sourceSpace == "YCbCr") {
-        ColorSpace::RGBtoYCbCr(originalImage, currentSourceImage);
-    } else if (sourceSpace == "HSI") {
-        ColorSpace::RGBtoHSI(originalImage, currentSourceImage);
-    } else if (sourceSpace == "Grayscale") {
-        ColorSpace::RGBtoGray(originalImage, currentSourceImage);
-    }
-    
-    updateConversion();
+void WaveletDialog::onWaveletTypeChanged(int index) {
+    updatePreview();
 }
 
-void ColorConversionDialog::onTargetColorSpaceChanged(int index) {
-    updateConversion();
+void WaveletDialog::onThresholdMethodChanged(int index) {
+    updatePreview();
 }
 
-void ColorConversionDialog::updateConversion() {
-    QString sourceSpace = sourceColorSpaceCombo->currentText();
-    QString targetSpace = targetColorSpaceCombo->currentText();
+void WaveletDialog::onParameterChanged() {
+    updatePreview();
+}
+
+void WaveletDialog::updatePreview() {
+    int opIndex = operationCombo->currentIndex();
     
-    // Perform conversion
-    if (sourceSpace == targetSpace) {
-        convertedImage = currentSourceImage.clone();
-        infoLabel->setText("Source and target are the same - no conversion needed");
-    } else {
-        // Convert from source to RGB first (if needed), then to target
-        cv::Mat rgbImage;
-        
-        // Source to RGB
-        if (sourceSpace == "RGB") {
-            rgbImage = currentSourceImage.clone();
-        } else if (sourceSpace == "HSV") {
-            ColorSpace::HSVtoRGB(currentSourceImage, rgbImage);
-        } else if (sourceSpace == "LAB") {
-            ColorSpace::LABtoRGB(currentSourceImage, rgbImage);
-        } else if (sourceSpace == "YCbCr") {
-            ColorSpace::YCbCrtoRGB(currentSourceImage, rgbImage);
-        } else if (sourceSpace == "HSI") {
-            ColorSpace::HSItoRGB(currentSourceImage, rgbImage);
-        } else if (sourceSpace == "Grayscale") {
-            ColorSpace::GraytoRGB(currentSourceImage, rgbImage);
+    try {
+        if (opIndex == 0) {
+            performDenoising();
+        } else if (opIndex == 1) {
+            performDecomposition();
+        } else {
+            performReconstruction();
         }
         
-        // RGB to target
-        if (targetSpace == "RGB") {
-            convertedImage = rgbImage.clone();
-        } else if (targetSpace == "HSV") {
-            ColorSpace::RGBtoHSV(rgbImage, convertedImage);
-        } else if (targetSpace == "LAB") {
-            ColorSpace::RGBtoLAB(rgbImage, convertedImage);
-        } else if (targetSpace == "YCbCr") {
-            ColorSpace::RGBtoYCbCr(rgbImage, convertedImage);
-        } else if (targetSpace == "HSI") {
-            ColorSpace::RGBtoHSI(rgbImage, convertedImage);
-        } else if (targetSpace == "Grayscale") {
-            ColorSpace::RGBtoGray(rgbImage, convertedImage);
+        if (!processedImage.empty()) {
+            processedCanvas->setImage(processedImage);
+            emit previewUpdated(processedImage);
+        }
+    } catch (const cv::Exception& e) {
+        infoLabel->setText(QString("Error: %1").arg(e.what()));
+        infoLabel->setStyleSheet("color: #ff6b6b; padding: 5px;");
+    } catch (const std::exception& e) {
+        infoLabel->setText(QString("Error: %1").arg(e.what()));
+        infoLabel->setStyleSheet("color: #ff6b6b; padding: 5px;");
+    }
+}
+
+void WaveletDialog::performDenoising() {
+    WaveletTransform::WaveletType wType = static_cast<WaveletTransform::WaveletType>(waveletTypeCombo->currentIndex());
+    WaveletTransform::ThresholdMethod tMethod = static_cast<WaveletTransform::ThresholdMethod>(thresholdMethodCombo->currentIndex());
+    
+    double threshold = thresholdSlider->value();
+    int levels = levelsSpinBox->value();
+    
+    // Convert to grayscale if needed
+    cv::Mat grayImage;
+    if (originalImage.channels() == 3) {
+        cv::cvtColor(originalImage, grayImage, cv::COLOR_BGR2GRAY);
+        qDebug() << "Converted to grayscale: " << grayImage.rows << "x" << grayImage.cols << " channels=" << grayImage.channels();
+    } else {
+        grayImage = originalImage.clone();
+        qDebug() << "Already grayscale: " << grayImage.rows << "x" << grayImage.cols << " channels=" << grayImage.channels();
+    }
+    
+    // Verify it's really grayscale
+    if (grayImage.channels() != 1) {
+        infoLabel->setText(QString("ERROR: Image still has %1 channels after conversion!").arg(grayImage.channels()));
+        infoLabel->setStyleSheet("color: #ff6b6b; padding: 5px;");
+        return;
+    }
+    
+    try {
+        cv::Mat denoised;
+        WaveletTransform::denoise(grayImage, denoised, threshold, tMethod, levels, wType);
+        
+        // denoise() might return CV_64F, convert to CV_8U first
+        if (denoised.depth() != CV_8U) {
+            denoised.convertTo(processedImage, CV_8U);
+        } else {
+            processedImage = denoised;
         }
         
-        infoLabel->setText(QString("Converted from %1 to %2").arg(sourceSpace, targetSpace));
-    }
-    
-    // Update displays
-    convertedCanvas->setImage(convertedImage);
-    
-    // Update channels if visible
-    if (channelsVisible) {
-        updateChannelVisualization();
-    }
-    
-    emit previewUpdated(convertedImage);
-}
-
-void ColorConversionDialog::updateChannelVisualization() {
-    QString targetSpace = targetColorSpaceCombo->currentText();
-    
-    if (convertedImage.channels() == 1) {
-        // Grayscale - show same image in all channels
-        channel1Canvas->setImage(convertedImage);
-        channel2Canvas->clear();
-        channel3Canvas->clear();
-        channel1Label->setText("Gray");
-        channel2Label->setText("");
-        channel3Label->setText("");
-    } else {
-        // Multi-channel image
-        std::vector<cv::Mat> channels;
-        ColorSpace::extractChannels(convertedImage, channels);
-        
-        if (channels.size() >= 3) {
-            channel1Canvas->setImage(channels[0]);
-            channel2Canvas->setImage(channels[1]);
-            channel3Canvas->setImage(channels[2]);
-            
-            channel1Label->setText(getChannelName(targetSpace, 0));
-            channel2Label->setText(getChannelName(targetSpace, 1));
-            channel3Label->setText(getChannelName(targetSpace, 2));
+        // Then convert to BGR if original was color
+        if (originalImage.channels() == 3 && processedImage.channels() == 1) {
+            cv::cvtColor(processedImage, processedImage, cv::COLOR_GRAY2BGR);
         }
+        
+        operationType = QString("Wavelet Denoising (%1, threshold=%2, levels=%3)")
+            .arg(WaveletTransform::getWaveletName(wType).c_str())
+            .arg(threshold)
+            .arg(levels);
+        
+        infoLabel->setText(operationType);
+        infoLabel->setStyleSheet("color: #a78bfa; padding: 5px;");
+    } catch (const cv::Exception& e) {
+        infoLabel->setText(QString("OpenCV Error: %1").arg(e.what()));
+        infoLabel->setStyleSheet("color: #ff6b6b; padding: 5px;");
+        qDebug() << "OpenCV Exception:" << e.what();
+    } catch (const std::exception& e) {
+        infoLabel->setText(QString("Error: %1").arg(e.what()));
+        infoLabel->setStyleSheet("color: #ff6b6b; padding: 5px;");
+        qDebug() << "Exception:" << e.what();
     }
 }
 
-QString ColorConversionDialog::getChannelName(const QString& colorSpace, int channelIndex) {
-    auto names = ColorSpace::getChannelNames(colorSpace);
-    if (channelIndex < names.size()) {
-        return names[channelIndex];
-    }
-    return QString("Channel %1").arg(channelIndex);
-}
-
-void ColorConversionDialog::onShowChannelsToggled(bool checked) {
-    channelsVisible = checked;
-    channelsWidget->setVisible(checked);
+void WaveletDialog::performDecomposition() {
+    WaveletTransform::WaveletType wType = static_cast<WaveletTransform::WaveletType>(waveletTypeCombo->currentIndex());
     
-    if (checked) {
-        showChannelsButton->setText("Hide Channels");
-        updateChannelVisualization();
-        setMinimumHeight(900);
+    // Convert to grayscale if needed
+    cv::Mat grayImage;
+    if (originalImage.channels() == 3) {
+        cv::cvtColor(originalImage, grayImage, cv::COLOR_BGR2GRAY);
     } else {
-        showChannelsButton->setText("Show Channels");
-        setMinimumHeight(700);
+        grayImage = originalImage.clone();
+    }
+    
+    // Verify it's really grayscale
+    if (grayImage.channels() != 1) {
+        infoLabel->setText(QString("ERROR: Image still has %1 channels after conversion!").arg(grayImage.channels()));
+        infoLabel->setStyleSheet("color: #ff6b6b; padding: 5px;");
+        return;
+    }
+    
+    try {
+        cv::Mat approx, horiz, vert, diag;
+        WaveletTransform::dwt2D(grayImage, approx, horiz, vert, diag, wType);
+        
+        // Reconstruct to show it's working
+        cv::Mat reconstructed;
+        WaveletTransform::idwt2D(approx, horiz, vert, diag, reconstructed, wType);
+        
+        // Convert from CV_64F to CV_8U first
+        reconstructed.convertTo(processedImage, CV_8U);
+        
+        // Then convert to BGR if original was color
+        if (originalImage.channels() == 3 && processedImage.channels() == 1) {
+            cv::cvtColor(processedImage, processedImage, cv::COLOR_GRAY2BGR);
+        }
+        
+        operationType = QString("Wavelet Decomposition + Reconstruction (%1)")
+            .arg(WaveletTransform::getWaveletName(wType).c_str());
+        
+        infoLabel->setText(operationType);
+        infoLabel->setStyleSheet("color: #a78bfa; padding: 5px;");
+    } catch (const cv::Exception& e) {
+        infoLabel->setText(QString("OpenCV Error: %1").arg(e.what()));
+        infoLabel->setStyleSheet("color: #ff6b6b; padding: 5px;");
+        qDebug() << "OpenCV Exception:" << e.what();
+    } catch (const std::exception& e) {
+        infoLabel->setText(QString("Error: %1").arg(e.what()));
+        infoLabel->setStyleSheet("color: #ff6b6b; padding: 5px;");
+        qDebug() << "Exception:" << e.what();
     }
 }
 
-void ColorConversionDialog::onApplyClicked() {
-    applied = true;
-    accept();
+void WaveletDialog::performReconstruction() {
+    WaveletTransform::WaveletType wType = static_cast<WaveletTransform::WaveletType>(waveletTypeCombo->currentIndex());
+    
+    // Convert to grayscale if needed
+    cv::Mat grayImage;
+    if (originalImage.channels() == 3) {
+        cv::cvtColor(originalImage, grayImage, cv::COLOR_BGR2GRAY);
+    } else {
+        grayImage = originalImage.clone();
+    }
+    
+    // Verify it's really grayscale
+    if (grayImage.channels() != 1) {
+        infoLabel->setText(QString("ERROR: Image still has %1 channels after conversion!").arg(grayImage.channels()));
+        infoLabel->setStyleSheet("color: #ff6b6b; padding: 5px;");
+        return;
+    }
+    
+    try {
+        cv::Mat approx, horiz, vert, diag;
+        WaveletTransform::dwt2D(grayImage, approx, horiz, vert, diag, wType);
+        
+        // Show visualization
+        processedImage = WaveletTransform::visualizeDecomposition(approx, horiz, vert, diag);
+        
+        // Visualization is already in grayscale (8-bit), convert to BGR if original was color
+        if (originalImage.channels() == 3 && processedImage.channels() == 1) {
+            cv::cvtColor(processedImage, processedImage, cv::COLOR_GRAY2BGR);
+        }
+        
+        operationType = QString("Wavelet Decomposition Visualization (%1)")
+            .arg(WaveletTransform::getWaveletName(wType).c_str());
+        
+        infoLabel->setText(QString("%1 - Shows: Approx | Horiz | Vert | Diag").arg(operationType));
+        infoLabel->setStyleSheet("color: #a78bfa; padding: 5px;");
+    } catch (const cv::Exception& e) {
+        infoLabel->setText(QString("OpenCV Error: %1").arg(e.what()));
+        infoLabel->setStyleSheet("color: #ff6b6b; padding: 5px;");
+        qDebug() << "OpenCV Exception:" << e.what();
+    } catch (const std::exception& e) {
+        infoLabel->setText(QString("Error: %1").arg(e.what()));
+        infoLabel->setStyleSheet("color: #ff6b6b; padding: 5px;");
+        qDebug() << "Exception:" << e.what();
+    }
 }
 
-void ColorConversionDialog::onCancelClicked() {
-    applied = false;
-    reject();
+void WaveletDialog::onApplyClicked() {
+    if (!processedImage.empty()) {
+        applied = true;
+        accept();
+    } else {
+        QMessageBox::warning(this, "No Preview", "No processed image to apply!");
+    }
 }
 
-QString ColorConversionDialog::getSourceColorSpace() const {
-    return sourceColorSpaceCombo->currentText();
+void WaveletDialog::onResetClicked() {
+    thresholdSlider->setValue(20);
+    thresholdMethodCombo->setCurrentIndex(0);
+    levelsSpinBox->setValue(3);
+    waveletTypeCombo->setCurrentIndex(0);
+    operationCombo->setCurrentIndex(0);
+    
+    updatePreview();
 }
-
-QString ColorConversionDialog::getTargetColorSpace() const {
-    return targetColorSpaceCombo->currentText();
-}
-
-#include "moc_ColorConversionDialog.cpp"
