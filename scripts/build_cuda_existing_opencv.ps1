@@ -13,12 +13,12 @@ $contribVersion = "4.12.0"
 
 # Check existing OpenCV
 if (!(Test-Path $opencvSource)) {
-    Write-Host "? ERROR: OpenCV source not found at $opencvSource" -ForegroundColor Red
+    Write-Host "[ERROR] OpenCV source not found at $opencvSource" -ForegroundColor Red
     Write-Host "Please verify your OpenCV installation." -ForegroundColor Yellow
     exit 1
 }
 
-Write-Host "? Using existing OpenCV source: $opencvSource" -ForegroundColor Green
+Write-Host "[OK] Using existing OpenCV source: $opencvSource" -ForegroundColor Green
 
 # Create build directory
 Write-Host "`nPreparing build environment..." -ForegroundColor Yellow
@@ -31,7 +31,7 @@ if (Test-Path $buildDir) {
 New-Item -ItemType Directory -Path $buildDir -Force | Out-Null
 Set-Location $buildDir
 
-Write-Host "? Build directory: $buildDir" -ForegroundColor Green
+Write-Host "[OK] Build directory: $buildDir" -ForegroundColor Green
 
 # Download OpenCV Contrib (only this is missing)
 Write-Host "`nDownloading OpenCV Contrib 4.12.0..." -ForegroundColor Yellow
@@ -42,26 +42,26 @@ $contribZip = "$buildDir\opencv_contrib.zip"
 try {
     Invoke-WebRequest -Uri $contribUrl -OutFile $contribZip -UseBasicParsing
     $size = (Get-Item $contribZip).Length / 1MB
-    Write-Host "? Downloaded: $([math]::Round($size, 2)) MB" -ForegroundColor Green
+    Write-Host "[OK] Downloaded: $([math]::Round($size, 2)) MB" -ForegroundColor Green
 } catch {
-    Write-Host "? Download failed, trying curl..." -ForegroundColor Yellow
+    Write-Host "[ERROR] Download failed, trying curl..." -ForegroundColor Yellow
     & curl.exe -L $contribUrl -o $contribZip
 }
 
 # Extract contrib
 Write-Host "Extracting contrib modules..." -ForegroundColor Yellow
 Expand-Archive -Path $contribZip -DestinationPath $buildDir -Force
-Write-Host "? Extracted" -ForegroundColor Green
+Write-Host "[OK] Extracted" -ForegroundColor Green
 
 # Find contrib path
 $contribPath = Get-ChildItem $buildDir -Directory -Filter "opencv_contrib*" | Select-Object -First 1
 if (!$contribPath) {
-    Write-Host "? ERROR: Contrib extraction failed!" -ForegroundColor Red
+    Write-Host "[ERROR] Contrib extraction failed!" -ForegroundColor Red
     exit 1
 }
 
 $contribModulesPath = Join-Path $contribPath.FullName "modules"
-Write-Host "? Contrib modules: $contribModulesPath" -ForegroundColor Green
+Write-Host "[OK] Contrib modules: $contribModulesPath" -ForegroundColor Green
 
 # Create cmake build directory
 $cmakeBuildDir = "$buildDir\build"
@@ -71,20 +71,20 @@ Set-Location $cmakeBuildDir
 # Check CUDA
 $cudaPath = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.1"
 if (!(Test-Path $cudaPath)) {
-    Write-Host "? ERROR: CUDA 13.1 not found!" -ForegroundColor Red
+    Write-Host "[ERROR] CUDA 13.1 not found!" -ForegroundColor Red
     exit 1
 }
-Write-Host "? CUDA 13.1 found" -ForegroundColor Green
+Write-Host "[OK] CUDA 13.1 found" -ForegroundColor Green
 
 # Check CMake
 if (!(Get-Command cmake -ErrorAction SilentlyContinue)) {
-    Write-Host "? ERROR: CMake not found!" -ForegroundColor Red
+    Write-Host "[ERROR] CMake not found!" -ForegroundColor Red
     Write-Host "Installing CMake..." -ForegroundColor Yellow
     winget install --id Kitware.CMake -e --silent
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
 }
 
-Write-Host "? CMake ready" -ForegroundColor Green
+Write-Host "[OK] CMake ready" -ForegroundColor Green
 
 # Configure CMake
 Write-Host ""
@@ -122,7 +122,7 @@ Write-Host "Configuring..." -ForegroundColor Cyan
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
-    Write-Host "? CMake configuration failed!" -ForegroundColor Red
+    Write-Host "[ERROR] CMake configuration failed!" -ForegroundColor Red
     Write-Host "Check errors above. Common issues:" -ForegroundColor Yellow
     Write-Host "  - Visual Studio not found" -ForegroundColor Gray
     Write-Host "  - CUDA path incorrect" -ForegroundColor Gray
@@ -130,7 +130,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host ""
-Write-Host "? Configuration complete!" -ForegroundColor Green
+Write-Host "[OK] Configuration complete!" -ForegroundColor Green
 
 # Build
 Write-Host ""
@@ -148,7 +148,7 @@ $buildStart = Get-Date
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
-    Write-Host "? Build failed!" -ForegroundColor Red
+    Write-Host "[ERROR] Build failed!" -ForegroundColor Red
     Write-Host ""
     Write-Host "This is common on first try. Solutions:" -ForegroundColor Yellow
     Write-Host "  1. Try building again (often works)" -ForegroundColor Cyan
@@ -162,7 +162,7 @@ if ($LASTEXITCODE -ne 0) {
 
 $buildTime = (Get-Date) - $buildStart
 Write-Host ""
-Write-Host "? Build completed in $($buildTime.TotalMinutes.ToString('F1')) minutes!" -ForegroundColor Green
+Write-Host "[OK] Build completed in $($buildTime.TotalMinutes.ToString('F1')) minutes!" -ForegroundColor Green
 
 # Install
 Write-Host ""
@@ -170,11 +170,11 @@ Write-Host "Installing to $installDir..." -ForegroundColor Yellow
 & cmake --install .
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "? Installation failed!" -ForegroundColor Red
+    Write-Host "[ERROR] Installation failed!" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "? Installed successfully!" -ForegroundColor Green
+Write-Host "[OK] Installed successfully!" -ForegroundColor Green
 
 # Verify CUDA DLLs
 Write-Host ""
@@ -182,13 +182,14 @@ Write-Host "Verifying CUDA support..." -ForegroundColor Yellow
 
 $vcDirs = @("vc17", "vc16")
 $cudaDlls = $null
+$vcDirFound = "vc17"  # Default
 
 foreach ($vcDir in $vcDirs) {
     $binPath = "$installDir\x64\$vcDir\bin"
     if (Test-Path $binPath) {
         $cudaDlls = Get-ChildItem $binPath -Filter "opencv_cuda*.dll" -ErrorAction SilentlyContinue
         if ($cudaDlls) {
-            Write-Host "? CUDA DLLs found in $vcDir:" -ForegroundColor Green
+            Write-Host "[OK] CUDA DLLs found in $vcDir" ":" -ForegroundColor Green
             $cudaDlls | ForEach-Object { Write-Host "  - $($_.Name)" -ForegroundColor Green }
             $vcDirFound = $vcDir
             break
@@ -197,7 +198,7 @@ foreach ($vcDir in $vcDirs) {
 }
 
 if (!$cudaDlls) {
-    Write-Host "? WARNING: CUDA DLLs not found!" -ForegroundColor Red
+    Write-Host "[WARNING] CUDA DLLs not found!" -ForegroundColor Red
     Write-Host "Build may not have CUDA support." -ForegroundColor Yellow
     Write-Host "Check build logs above for CUDA-related errors." -ForegroundColor Yellow
 }
@@ -212,9 +213,9 @@ $currentPath = [Environment]::GetEnvironmentVariable("Path", "Machine")
 if ($currentPath -notlike "*$binDir*") {
     try {
         [Environment]::SetEnvironmentVariable("Path", "$currentPath;$binDir", "Machine")
-        Write-Host "? PATH updated" -ForegroundColor Green
+        Write-Host "[OK] PATH updated" -ForegroundColor Green
     } catch {
-        Write-Host "? Could not update PATH (need admin)" -ForegroundColor Yellow
+        Write-Host "[WARNING] Could not update PATH (need admin)" -ForegroundColor Yellow
         Write-Host "Please add manually: $binDir" -ForegroundColor Cyan
     }
 }
@@ -234,7 +235,7 @@ foreach ($path in $projectPaths) {
     }
     
     Copy-Item "$binDir\*.dll" $path -Force -ErrorAction SilentlyContinue
-    Write-Host "  ? Copied to: $path" -ForegroundColor Green
+    Write-Host "  [OK] Copied to: $path" -ForegroundColor Green
 }
 
 # Copy CUDA runtime
@@ -247,7 +248,7 @@ if (Test-Path $cudaBin) {
         Copy-Item "$cudaBin\cublas64_*.dll" $path -Force -ErrorAction SilentlyContinue
         Copy-Item "$cudaBin\cufft64_*.dll" $path -Force -ErrorAction SilentlyContinue
     }
-    Write-Host "? CUDA DLLs copied" -ForegroundColor Green
+    Write-Host "[OK] CUDA DLLs copied" -ForegroundColor Green
 }
 
 # Create property sheet
@@ -275,7 +276,7 @@ $propsContent = @"
 
 $propsFile = "F:\Naghuma Toolbox\opencv_cuda.props"
 $propsContent | Out-File $propsFile -Encoding UTF8
-Write-Host "? Created: $propsFile" -ForegroundColor Green
+Write-Host "[OK] Created: $propsFile" -ForegroundColor Green
 
 # Cleanup
 Write-Host ""
@@ -284,7 +285,7 @@ if ($cleanup -eq "y") {
     Set-Location "C:\"
     Start-Sleep -Seconds 2
     Remove-Item $buildDir -Recurse -Force -ErrorAction SilentlyContinue
-    Write-Host "? Build directory cleaned" -ForegroundColor Green
+    Write-Host "[OK] Build directory cleaned" -ForegroundColor Green
 }
 
 # Summary
