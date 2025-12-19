@@ -129,6 +129,9 @@ private slots:
     
     // Phase 17: Advanced Segmentation - NEW
     void showAdvancedSegmentationDialog();
+    
+    // Phase 19: Feature Detection - NEW
+    void showFeatureDetectionDialog();
 
     // Morphology Operations
     void applyErosion();

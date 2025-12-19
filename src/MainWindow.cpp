@@ -22,6 +22,7 @@
 #include "MainWindow_Macros.h"
 #include "ThresholdingDialog.h"  // Phase 16
 #include "SegmentationDialog.h"  // Phase 17
+#include "FeatureDetectionDialog.h"  // Phase 19
 #include <QApplication>
 #include <QScreen>
 #include <QVBoxLayout>
@@ -2639,6 +2640,51 @@ void MainWindow::showAdvancedSegmentationDialog() {
         updateStatus(QString("%1 segmentation applied successfully!").arg(segmentType), "success");
     } else {
         // User cancelled - clear preview
+        processedImage = cv::Mat();
+        recentlyProcessed = false;
+        processedCanvas->clear();
+        updateDisplay();
+    }
+}
+
+// ============================================================================
+// PHASE 19: FEATURE DETECTION - CORNERS
+// ============================================================================
+
+void MainWindow::showFeatureDetectionDialog() {
+    if (!checkImageLoaded("apply feature detection")) return;
+    
+    FeatureDetectionDialog dialog(currentImage, this);
+    
+    // Connect preview signal
+    connect(&dialog, &FeatureDetectionDialog::previewUpdated, this, [this](const cv::Mat& preview) {
+        processedImage = preview.clone();
+        recentlyProcessed = true;
+        updateDisplay();
+    });
+    
+    if (dialog.exec() == QDialog::Accepted && dialog.wasApplied()) {
+        processedImage = dialog.getDetectedImage();
+        recentlyProcessed = true;
+        updateDisplay();
+        
+        QString detectionType = dialog.getDetectionType();
+        int featureCount = dialog.getFeatureCount();
+        
+        if (!processedImage.empty()) {
+            currentImage = processedImage.clone();
+            rightSidebar->addLayer(
+                QString("Features: %1 (%2)").arg(detectionType).arg(featureCount),
+                "features",
+                processedImage,
+                nullptr
+            );
+            rightSidebar->updateHistogram(processedImage);
+            updateUndoButtonState();
+        }
+        
+        updateStatus(QString("Feature detection: %1 features found").arg(featureCount), "success");
+    } else {
         processedImage = cv::Mat();
         recentlyProcessed = false;
         processedCanvas->clear();
