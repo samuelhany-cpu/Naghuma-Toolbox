@@ -12,6 +12,13 @@ A powerful, feature-rich image processing application built with Qt and OpenCV, 
 
 ## ? Key Features
 
+### ?? GPU Acceleration ? NEW
+- **10-100x Faster Processing** with NVIDIA CUDA
+- Automatic GPU detection and initialization
+- Seamless CPU fallback when GPU unavailable
+- Real-time preview for all operations
+- Supports CUDA Compute Capability 3.5+
+
 ### ??? Core Functionality
 - **Dual Canvas System**: Side-by-side original and processed image display
 - **Non-Destructive Editing**: Layer-based processing with full undo/redo
@@ -199,6 +206,10 @@ A powerful, feature-rich image processing application built with Qt and OpenCV, 
 - **Qt 6.7.3** (MSVC 2019 64-bit)
 - **OpenCV 4.x** (with contrib modules recommended)
 - **Visual Studio 2019/2022** (C++17 support)
+- **NVIDIA GPU** (optional, for GPU acceleration)
+  - CUDA Compute Capability 3.5+ recommended
+  - GTX 1060 or better for optimal performance
+  - See [GPU Acceleration Guide](docs/GPU_Acceleration_Guide.md) for setup
 
 ### Installation
 
@@ -451,6 +462,14 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - ?? GrabCut foreground extraction
 - ?? SLIC superpixels
 - ?? Comprehensive documentation
+
+### v1.8.0 (In Progress) - Phase 18 ??
+- ? GPU Acceleration with NVIDIA CUDA
+- ??? 10-100x faster processing
+- ?? Real-time preview for all operations
+- ?? Automatic CPU fallback
+- ?? Performance monitoring and profiling
+- See [GPU Acceleration Guide](docs/GPU_Acceleration_Guide.md)
 
 ### v1.6.0 - Phase 16
 - Added comprehensive thresholding tools

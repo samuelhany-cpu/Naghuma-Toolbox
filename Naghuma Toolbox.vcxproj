@@ -140,6 +140,7 @@
     <None Include="PHASE9_NOISE_REMOVAL_COMPLETE.md" />
     <None Include="PROJECT_COMPLETE.md" />
     <None Include="QUICK_FIX.md" />
+    <None Include="README.md" />
     <None Include="regenerate_moc_and_build.ps1" />
     <None Include="scripts\add_new_files.ps1" />
     <None Include="update_project_threshold.ps1" />
