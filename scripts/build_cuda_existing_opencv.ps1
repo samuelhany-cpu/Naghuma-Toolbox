@@ -1,90 +1,188 @@
 # Build OpenCV 4.12.0 with CUDA using existing installation
-# Uses your existing C:\opencv and only downloads what's missing
+# Uses your existing C:\opencv and only downloads contrib modules
+# Based on official OpenCV documentation: https://github.com/opencv/opencv_contrib
 
 Write-Host "????????????????????????????????????????????????????????????" -ForegroundColor Cyan
 Write-Host "   OpenCV 4.12.0 CUDA Build for RTX 3050 Ti" -ForegroundColor Yellow
 Write-Host "????????????????????????????????????????????????????????????" -ForegroundColor Cyan
 Write-Host ""
+Write-Host "This script follows official OpenCV contrib build method:" -ForegroundColor Gray
+Write-Host "  https://github.com/opencv/opencv_contrib" -ForegroundColor Gray
+Write-Host ""
 
 $opencvSource = "C:\opencv\sources"
 $buildDir = "C:\opencv-cuda-build"
 $installDir = "C:\opencv-cuda"
-$contribVersion = "4.12.0"
+$opencvVersion = "4.12.0"
 
-# Check existing OpenCV
+# Verify OpenCV version
+Write-Host "Verifying OpenCV installation..." -ForegroundColor Yellow
+$versionFile = "$opencvSource\modules\core\include\opencv2\core\version.hpp"
+if (Test-Path $versionFile) {
+    $versionContent = Get-Content $versionFile | Select-String -Pattern "CV_VERSION_MAJOR|CV_VERSION_MINOR|CV_VERSION_REVISION"
+    $major = ($versionContent | Select-String "CV_VERSION_MAJOR" | Select-Object -First 1).ToString() -replace '.*?(\d+).*','$1'
+    $minor = ($versionContent | Select-String "CV_VERSION_MINOR" | Select-Object -First 1).ToString() -replace '.*?(\d+).*','$1'
+    $revision = ($versionContent | Select-String "CV_VERSION_REVISION" | Select-Object -First 1).ToString() -replace '.*?(\d+).*','$1'
+    $detectedVersion = "$major.$minor.$revision"
+    
+    Write-Host "[OK] OpenCV Version: $detectedVersion" -ForegroundColor Green
+    
+    if ($detectedVersion -ne $opencvVersion) {
+        Write-Host "[WARNING] Version mismatch!" -ForegroundColor Yellow
+        Write-Host "  Expected: $opencvVersion" -ForegroundColor Yellow
+        Write-Host "  Found: $detectedVersion" -ForegroundColor Yellow
+        Write-Host "  Using detected version: $detectedVersion" -ForegroundColor Cyan
+        $opencvVersion = $detectedVersion
+    }
+} else {
+    Write-Host "[WARNING] Could not verify OpenCV version" -ForegroundColor Yellow
+    Write-Host "  Assuming version: $opencvVersion" -ForegroundColor Yellow
+}
+
 if (!(Test-Path $opencvSource)) {
     Write-Host "[ERROR] OpenCV source not found at $opencvSource" -ForegroundColor Red
-    Write-Host "Please verify your OpenCV installation." -ForegroundColor Yellow
     exit 1
 }
 
-Write-Host "[OK] Using existing OpenCV source: $opencvSource" -ForegroundColor Green
+Write-Host "[OK] OpenCV source: $opencvSource" -ForegroundColor Green
 
-# Create build directory
+# Prepare build directory
 Write-Host "`nPreparing build environment..." -ForegroundColor Yellow
 if (Test-Path $buildDir) {
-    $response = Read-Host "Build directory exists. Clean it? (y/n)"
-    if ($response -eq "y") {
-        Remove-Item $buildDir -Recurse -Force
+    Write-Host "Build directory already exists: $buildDir" -ForegroundColor Yellow
+    $response = Read-Host "Clean and rebuild? (y/n)"
+    if ($response -ne "y") {
+        Write-Host "Keeping existing build directory." -ForegroundColor Gray
+        Write-Host "If build fails, delete $buildDir manually and try again." -ForegroundColor Yellow
+    } else {
+        Write-Host "Cleaning build directory..." -ForegroundColor Yellow
+        Remove-Item $buildDir -Recurse -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 2
     }
 }
+
 New-Item -ItemType Directory -Path $buildDir -Force | Out-Null
 Set-Location $buildDir
-
 Write-Host "[OK] Build directory: $buildDir" -ForegroundColor Green
 
-# Download OpenCV Contrib (only this is missing)
-Write-Host "`nDownloading OpenCV Contrib 4.12.0..." -ForegroundColor Yellow
+# Download OpenCV Contrib
+Write-Host "`nDownloading OpenCV Contrib $opencvVersion..." -ForegroundColor Yellow
+Write-Host "Source: https://github.com/opencv/opencv_contrib" -ForegroundColor Gray
 
-$contribUrl = "https://github.com/opencv/opencv_contrib/archive/refs/tags/$contribVersion.zip"
-$contribZip = "$buildDir\opencv_contrib.zip"
+$contribUrl = "https://github.com/opencv/opencv_contrib/archive/refs/tags/$opencvVersion.zip"
+$contribZip = "$buildDir\opencv_contrib-$opencvVersion.zip"
 
-try {
-    Invoke-WebRequest -Uri $contribUrl -OutFile $contribZip -UseBasicParsing
-    $size = (Get-Item $contribZip).Length / 1MB
-    Write-Host "[OK] Downloaded: $([math]::Round($size, 2)) MB" -ForegroundColor Green
-} catch {
-    Write-Host "[ERROR] Download failed, trying curl..." -ForegroundColor Yellow
-    & curl.exe -L $contribUrl -o $contribZip
+if (Test-Path $contribZip) {
+    Write-Host "Contrib archive already downloaded." -ForegroundColor Gray
+} else {
+    Write-Host "Downloading from: $contribUrl" -ForegroundColor Cyan
+    
+    try {
+        $ProgressPreference = 'SilentlyContinue'
+        Invoke-WebRequest -Uri $contribUrl -OutFile $contribZip -UseBasicParsing
+        $ProgressPreference = 'Continue'
+        
+        $size = (Get-Item $contribZip).Length / 1MB
+        Write-Host "[OK] Downloaded: $([math]::Round($size, 2)) MB" -ForegroundColor Green
+    } catch {
+        Write-Host "[ERROR] Download failed: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "Trying alternative method (curl)..." -ForegroundColor Yellow
+        
+        & curl.exe -L $contribUrl -o $contribZip
+        
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "[ERROR] Download failed with curl too!" -ForegroundColor Red
+            Write-Host "Please download manually from:" -ForegroundColor Yellow
+            Write-Host "  $contribUrl" -ForegroundColor Cyan
+            Write-Host "And extract to: $buildDir" -ForegroundColor Cyan
+            exit 1
+        }
+    }
 }
 
 # Extract contrib
-Write-Host "Extracting contrib modules..." -ForegroundColor Yellow
-Expand-Archive -Path $contribZip -DestinationPath $buildDir -Force
-Write-Host "[OK] Extracted" -ForegroundColor Green
+Write-Host "`nExtracting contrib modules..." -ForegroundColor Yellow
 
-# Find contrib path
+$extractedFolder = "$buildDir\opencv_contrib-$opencvVersion"
+if (Test-Path $extractedFolder) {
+    Write-Host "Contrib already extracted." -ForegroundColor Gray
+} else {
+    try {
+        Expand-Archive -Path $contribZip -DestinationPath $buildDir -Force
+        Write-Host "[OK] Extracted successfully" -ForegroundColor Green
+    } catch {
+        Write-Host "[ERROR] Extraction failed: $($_.Exception.Message)" -ForegroundColor Red
+        exit 1
+    }
+}
+
+# Verify contrib path
 $contribPath = Get-ChildItem $buildDir -Directory -Filter "opencv_contrib*" | Select-Object -First 1
 if (!$contribPath) {
-    Write-Host "[ERROR] Contrib extraction failed!" -ForegroundColor Red
+    Write-Host "[ERROR] Contrib folder not found after extraction!" -ForegroundColor Red
+    Write-Host "Expected: $extractedFolder" -ForegroundColor Yellow
     exit 1
 }
 
 $contribModulesPath = Join-Path $contribPath.FullName "modules"
-Write-Host "[OK] Contrib modules: $contribModulesPath" -ForegroundColor Green
+if (!(Test-Path $contribModulesPath)) {
+    Write-Host "[ERROR] Contrib modules folder not found: $contribModulesPath" -ForegroundColor Red
+    exit 1
+}
 
-# Create cmake build directory
+Write-Host "[OK] Contrib modules: $contribModulesPath" -ForegroundColor Green
+Write-Host "    Modules count: $((Get-ChildItem $contribModulesPath -Directory).Count)" -ForegroundColor Gray
+
+# Create CMake build directory
 $cmakeBuildDir = "$buildDir\build"
 New-Item -ItemType Directory -Path $cmakeBuildDir -Force | Out-Null
 Set-Location $cmakeBuildDir
 
+# Verify prerequisites
+Write-Host "`nVerifying prerequisites..." -ForegroundColor Yellow
+
 # Check CUDA
 $cudaPath = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.1"
 if (!(Test-Path $cudaPath)) {
-    Write-Host "[ERROR] CUDA 13.1 not found!" -ForegroundColor Red
+    Write-Host "[ERROR] CUDA 13.1 not found at: $cudaPath" -ForegroundColor Red
     exit 1
 }
-Write-Host "[OK] CUDA 13.1 found" -ForegroundColor Green
+Write-Host "[OK] CUDA 13.1: $cudaPath" -ForegroundColor Green
 
 # Check CMake
-if (!(Get-Command cmake -ErrorAction SilentlyContinue)) {
+$cmake = Get-Command cmake -ErrorAction SilentlyContinue
+if (!$cmake) {
     Write-Host "[ERROR] CMake not found!" -ForegroundColor Red
-    Write-Host "Installing CMake..." -ForegroundColor Yellow
-    winget install --id Kitware.CMake -e --silent
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
+    Write-Host "Installing CMake via winget..." -ForegroundColor Yellow
+    
+    winget install --id Kitware.CMake -e --silent --accept-source-agreements --accept-package-agreements
+    
+    # Refresh PATH
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + 
+                [System.Environment]::GetEnvironmentVariable("Path", "User")
+    
+    $cmake = Get-Command cmake -ErrorAction SilentlyContinue
+    if (!$cmake) {
+        Write-Host "[ERROR] CMake installation failed!" -ForegroundColor Red
+        Write-Host "Please install CMake manually: https://cmake.org/download/" -ForegroundColor Yellow
+        exit 1
+    }
 }
 
-Write-Host "[OK] CMake ready" -ForegroundColor Green
+Write-Host "[OK] CMake: $($cmake.Source)" -ForegroundColor Green
+Write-Host "    Version: $(& cmake --version | Select-Object -First 1)" -ForegroundColor Gray
+
+# Check Visual Studio
+$vsWhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+if (Test-Path $vsWhere) {
+    $vsPath = & $vsWhere -latest -property installationPath
+    if ($vsPath) {
+        Write-Host "[OK] Visual Studio: $vsPath" -ForegroundColor Green
+    }
+} else {
+    Write-Host "[WARNING] Could not verify Visual Studio installation" -ForegroundColor Yellow
+    Write-Host "    CMake will try to find it automatically" -ForegroundColor Gray
+}
 
 # Configure CMake
 Write-Host ""
@@ -92,18 +190,29 @@ Write-Host "????????????????????????????????????????????????????????????" -Foreg
 Write-Host "   Configuring CMake (10-15 minutes)" -ForegroundColor Yellow
 Write-Host "????????????????????????????????????????????????????????????" -ForegroundColor Cyan
 Write-Host ""
+Write-Host "Building for RTX 3050 Ti (Compute Capability 8.6)..." -ForegroundColor Cyan
+Write-Host "With CUDA acceleration and contrib modules..." -ForegroundColor Cyan
+Write-Host ""
 
 $cmakeArgs = @(
     "-G", "Visual Studio 17 2022",
     "-A", "x64",
     "-D", "CMAKE_BUILD_TYPE=RELEASE",
     "-D", "CMAKE_INSTALL_PREFIX=$installDir",
+    
+    # Contrib modules (official method)
     "-D", "OPENCV_EXTRA_MODULES_PATH=$contribModulesPath",
+    
+    # Disable unnecessary components
     "-D", "BUILD_EXAMPLES=OFF",
     "-D", "BUILD_TESTS=OFF",
     "-D", "BUILD_PERF_TESTS=OFF",
+    "-D", "BUILD_DOCS=OFF",
     "-D", "BUILD_opencv_python2=OFF",
     "-D", "BUILD_opencv_python3=OFF",
+    "-D", "BUILD_opencv_java=OFF",
+    
+    # CUDA Configuration for RTX 3050 Ti
     "-D", "WITH_CUDA=ON",
     "-D", "CUDA_ARCH_BIN=8.6",
     "-D", "CUDA_ARCH_PTX=8.6",
@@ -111,26 +220,43 @@ $cmakeArgs = @(
     "-D", "WITH_CUBLAS=ON",
     "-D", "WITH_CUFFT=ON",
     "-D", "ENABLE_FAST_MATH=ON",
+    
+    # CUDA DNN support
     "-D", "OPENCV_DNN_CUDA=ON",
+    
+    # Additional optimizations
     "-D", "WITH_TBB=ON",
     "-D", "WITH_OPENGL=ON",
+    "-D", "WITH_IPP=ON",
+    "-D", "WITH_EIGEN=ON",
+    
+    # Source directory
     $opencvSource
 )
 
-Write-Host "Configuring..." -ForegroundColor Cyan
+Write-Host "Running CMake configuration..." -ForegroundColor Cyan
+Write-Host "(This will take 10-15 minutes, please be patient)" -ForegroundColor Yellow
+Write-Host ""
+
+$configStart = Get-Date
 & cmake @cmakeArgs
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
     Write-Host "[ERROR] CMake configuration failed!" -ForegroundColor Red
-    Write-Host "Check errors above. Common issues:" -ForegroundColor Yellow
-    Write-Host "  - Visual Studio not found" -ForegroundColor Gray
-    Write-Host "  - CUDA path incorrect" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "Common issues:" -ForegroundColor Yellow
+    Write-Host "  1. Visual Studio 2022 not installed" -ForegroundColor Gray
+    Write-Host "  2. CUDA toolkit not in PATH" -ForegroundColor Gray
+    Write-Host "  3. Missing dependencies" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "Check the error messages above for details." -ForegroundColor Yellow
     exit 1
 }
 
+$configTime = (Get-Date) - $configStart
 Write-Host ""
-Write-Host "[OK] Configuration complete!" -ForegroundColor Green
+Write-Host "[OK] Configuration completed in $($configTime.TotalMinutes.ToString('F1')) minutes!" -ForegroundColor Green
 
 # Build
 Write-Host ""
@@ -138,25 +264,35 @@ Write-Host "????????????????????????????????????????????????????????????" -Foreg
 Write-Host "   Building OpenCV with CUDA (60-90 minutes)" -ForegroundColor Yellow
 Write-Host "????????????????????????????????????????????????????????????" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "This will use all CPU cores. Please be patient..." -ForegroundColor Yellow
+Write-Host "This will compile OpenCV with:" -ForegroundColor Cyan
+Write-Host "  - CUDA 13.1 support" -ForegroundColor White
+Write-Host "  - RTX 3050 Ti optimizations (Compute 8.6)" -ForegroundColor White
+Write-Host "  - All contrib modules" -ForegroundColor White
+Write-Host "  - Parallel build (using all CPU cores)" -ForegroundColor White
+Write-Host ""
+Write-Host "Estimated time: 60-90 minutes" -ForegroundColor Yellow
 Write-Host "Go grab a coffee! ?" -ForegroundColor Cyan
 Write-Host ""
 
 $buildStart = Get-Date
 
-& cmake --build . --config Release --parallel
+& cmake --build . --config Release --parallel -- /m /verbosity:minimal
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
     Write-Host "[ERROR] Build failed!" -ForegroundColor Red
     Write-Host ""
-    Write-Host "This is common on first try. Solutions:" -ForegroundColor Yellow
-    Write-Host "  1. Try building again (often works)" -ForegroundColor Cyan
-    Write-Host "  2. Check you have enough RAM (8GB+ recommended)" -ForegroundColor Cyan
+    Write-Host "Common solutions:" -ForegroundColor Yellow
+    Write-Host "  1. Try building again (often works on retry)" -ForegroundColor Cyan
+    Write-Host "  2. Check available RAM (need 8GB+)" -ForegroundColor Cyan
+    Write-Host "  3. Close other applications" -ForegroundColor Cyan
+    Write-Host "  4. Build without parallel: cmake --build . --config Release" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "To retry manually:" -ForegroundColor Yellow
+    Write-Host "To retry:" -ForegroundColor Yellow
     Write-Host "  cd '$cmakeBuildDir'" -ForegroundColor Cyan
     Write-Host "  cmake --build . --config Release --parallel" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "Build directory preserved for debugging." -ForegroundColor Gray
     exit 1
 }
 
