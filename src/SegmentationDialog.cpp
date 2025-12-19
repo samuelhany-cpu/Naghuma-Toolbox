@@ -322,43 +322,96 @@ void SegmentationDialog::applyWatershed() {
         gray = inputImage.clone();
     }
     
-    // Threshold
-    double thresholdValue = watershedThresholdSpin->value() * 2.55;
-    cv::threshold(gray, binary, thresholdValue, 255, cv::THRESH_BINARY);
+    // Threshold - use a fixed value or Otsu
+    double thresholdPercent = watershedThresholdSpin->value();
+    cv::Mat thresh;
+    cv::threshold(gray, thresh, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
     
-    // Distance transform
+    // Noise removal using morphological opening
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
+    cv::morphologyEx(thresh, binary, cv::MORPH_OPEN, kernel, cv::Point(-1, -1), 2);
+    
+    // Sure background area
+    cv::Mat sure_bg;
+    cv::dilate(binary, sure_bg, kernel, cv::Point(-1, -1), 3);
+    
+    // Finding sure foreground area using distance transform
     cv::distanceTransform(binary, dist, cv::DIST_L2, 5);
+    
+    // Normalize distance transform
     cv::normalize(dist, dist, 0, 1.0, cv::NORM_MINMAX);
     
-    // Find peaks (markers)
-    cv::threshold(dist, dist, 0.4, 1.0, cv::THRESH_BINARY);
-    cv::Mat kernel = cv::Mat::ones(3, 3, CV_8U);
-    cv::dilate(dist, dist, kernel);
-    dist.convertTo(markers, CV_8U);
-    cv::findContours(markers, std::vector<std::vector<cv::Point>>(), cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-    markers.convertTo(markers, CV_32S);
-    cv::connectedComponents(markers, markers);
+    // Threshold to get sure foreground
+    double distThreshold = 0.01 + (thresholdPercent / 100.0) * 0.6; // Scale 0.01 to 0.61
+    cv::Mat sure_fg;
+    cv::threshold(dist, sure_fg, distThreshold, 1.0, cv::THRESH_BINARY);
+    sure_fg.convertTo(sure_fg, CV_8U);
     
-    // Apply watershed
+    // Unknown region
+    cv::Mat unknown;
+    cv::subtract(sure_bg, sure_fg, unknown);
+    
+    // Marker labelling
+    cv::Mat markers32s;
+    cv::connectedComponents(sure_fg, markers32s);
+    
+    // Add one to all labels so that sure background is not 0, but 1
+    markers32s = markers32s + 1;
+    
+    // Mark the unknown region with 0
+    markers32s.setTo(0, unknown == 255);
+    
+    // Convert input to BGR if needed
     cv::Mat inputCopy = inputImage.clone();
     if (inputCopy.channels() == 1) {
         cv::cvtColor(inputCopy, inputCopy, cv::COLOR_GRAY2BGR);
     }
-    cv::watershed(inputCopy, markers);
+    
+    // Ensure markers and input have compatible sizes
+    if (markers32s.size() != inputCopy.size()) {
+        cv::resize(markers32s, markers32s, inputCopy.size(), 0, 0, cv::INTER_NEAREST);
+    }
+    
+    // Apply watershed
+    cv::watershed(inputCopy, markers32s);
     
     // Create colored output
-    previewImage = cv::Mat::zeros(markers.size(), CV_8UC3);
-    for (int i = 0; i < markers.rows; i++) {
-        for (int j = 0; j < markers.cols; j++) {
-            int index = markers.at<int>(i, j);
-            if (index > 0 && index <= 50) {
-                previewImage.at<cv::Vec3b>(i, j) = cv::Vec3b(index * 10 % 256, index * 50 % 256, index * 100 % 256);
+    previewImage = cv::Mat::zeros(markers32s.size(), CV_8UC3);
+    
+    // Find unique labels
+    double minVal, maxVal;
+    cv::minMaxLoc(markers32s, &minVal, &maxVal);
+    int numLabels = static_cast<int>(maxVal);
+    
+    // Generate random colors for each label
+    std::vector<cv::Vec3b> colors(numLabels + 1);
+    colors[0] = cv::Vec3b(0, 0, 0); // Background
+    colors[1] = cv::Vec3b(128, 128, 128); // Sure background
+    
+    for (int i = 2; i <= numLabels; i++) {
+        colors[i] = cv::Vec3b(
+            (i * 50) % 256,
+            (i * 100) % 256,
+            (i * 150) % 256
+        );
+    }
+    
+    // Color the regions
+    for (int i = 0; i < markers32s.rows; i++) {
+        for (int j = 0; j < markers32s.cols; j++) {
+            int label = markers32s.at<int>(i, j);
+            if (label == -1) {
+                // Boundary
+                previewImage.at<cv::Vec3b>(i, j) = cv::Vec3b(0, 255, 0);
+            } else if (label >= 0 && label <= numLabels) {
+                previewImage.at<cv::Vec3b>(i, j) = colors[label];
             }
         }
     }
     
-    segmentationType = "Watershed";
-    infoLabel->setText(QString("Watershed segmentation applied (Threshold: %1)").arg(watershedThresholdSpin->value()));
+    segmentationType = QString("Watershed (%1 regions)").arg(numLabels);
+    infoLabel->setText(QString("Watershed segmentation: %1 regions found (Threshold: %2%)")
+        .arg(numLabels).arg(watershedThresholdSpin->value()));
     infoLabel->setStyleSheet("color: #a78bfa; padding: 5px;");
 }
 
