@@ -190,6 +190,8 @@ void MainWindow::createMenuBar() {
     ADD_MENU_ACTION(segmentMenu, "Thresholding...", showThresholdingDialog);
     segmentMenu->addSeparator();
     ADD_MENU_ACTION(segmentMenu, "Region-Based Segmentation...", showAdvancedSegmentationDialog);
+    segmentMenu->addSeparator();
+    ADD_MENU_ACTION(segmentMenu, "Feature Detection...", showFeatureDetectionDialog);
     
     // Morphology Menu
     QMenu *morphMenu = menuBar->addMenu("Morphology");
