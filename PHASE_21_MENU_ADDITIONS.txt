@@ -1,0 +1,44 @@
+==============================================
+PHASE 21 MENU ADDITIONS
+Add these lines to MainWindow.cpp createMenuBar()
+==============================================
+
+Find this code in the Process Menu section (around line 162):
+
+    ADD_MENU_ACTION(processMenu, "Invert Colors", invertColors);
+    processMenu->addSeparator();
+    ADD_MENU_ACTION(processMenu, "Compress Image...", applyCompression);
+
+ADD AFTER IT:
+
+    processMenu->addSeparator();
+    
+    // Phase 21: Intensity Transformations & Edge Enhancement
+    QMenu* intensityMenu = processMenu->addMenu("Intensity Transformations");
+    ADD_MENU_ACTION(intensityMenu, "Gamma & Log Transform...", showIntensityTransformDialog);
+    
+    QMenu* sharpenMenu = processMenu->addMenu("Sharpening Filters");
+    ADD_MENU_ACTION(sharpenMenu, "Laplacian/Unsharp/High-Boost...", showSharpeningDialog);
+
+==============================================
+ALTERNATIVE: Use Find/Replace
+==============================================
+
+FIND:
+    ADD_MENU_ACTION(processMenu, "Compress Image...", applyCompression);
+    
+    // Filters Menu
+
+REPLACE WITH:
+    ADD_MENU_ACTION(processMenu, "Compress Image...", applyCompression);
+    processMenu->addSeparator();
+    
+    // Phase 21: Intensity Transformations & Edge Enhancement
+    QMenu* intensityMenu = processMenu->addMenu("Intensity Transformations");
+    ADD_MENU_ACTION(intensityMenu, "Gamma & Log Transform...", showIntensityTransformDialog);
+    
+    QMenu* sharpenMenu = processMenu->addMenu("Sharpening Filters");
+    ADD_MENU_ACTION(sharpenMenu, "Laplacian/Unsharp/High-Boost...", showSharpeningDialog);
+    
+    // Filters Menu
+

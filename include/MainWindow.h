@@ -135,6 +135,13 @@ private slots:
     
     // Phase 19: Advanced Frequency Filters - NEW
     void showFrequencyFilterDialog();
+    
+    // Phase 20: Wavelet Transform
+    void showWaveletDialog();
+    
+    // Phase 21: Intensity Transformations & Edge Enhancement - NEW
+    void showIntensityTransformDialog();
+    void showSharpeningDialog();
 
     // Morphology Operations
     void applyErosion();
@@ -218,9 +225,6 @@ private:
     QPoint roiEndPoint;
     bool roiSelecting;
     RectangleROI *currentROI;
-
-    //Wavelet
-    void showWaveletDialog();
 };
 
 #endif // MAINWINDOW_H
