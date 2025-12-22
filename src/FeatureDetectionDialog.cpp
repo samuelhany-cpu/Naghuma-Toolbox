@@ -592,3 +592,4 @@ void FeatureDetectionDialog::onResetClicked() {
     
     updatePreview();
 }
+#include "moc_FeatureDetectionDialog.cpp"

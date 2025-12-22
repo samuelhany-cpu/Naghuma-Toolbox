@@ -210,6 +210,14 @@ int RightSidebarWidget::getLayerCount() const {
     return layerManager->getLayerCount();
 }
 
+bool RightSidebarWidget::hasLayers() const {
+    return layerManager->hasLayers();
+}
+
+const QVector<ProcessingLayer>& RightSidebarWidget::getLayers() const {
+    return layerManager->getLayers();
+}
+
 cv::Mat RightSidebarWidget::getLayerImage(int layerIndex) const {
     const auto& layers = layerManager->getLayers();
     if (layerIndex >= 0 && layerIndex < layers.size()) {
@@ -314,3 +322,5 @@ void RightSidebarWidget::onRemoveLayerClicked() {
         emit layersRemoveRequested(layersToRemove);
     }
 }
+
+#include "moc_RightSidebarWidget.cpp"

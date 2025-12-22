@@ -170,3 +170,5 @@ bool ROIManager::exportStatisticsToCSV(const QString& filepath, const cv::Mat& i
     file.close();
     return true;
 }
+
+#include "moc_ROIManager.cpp"

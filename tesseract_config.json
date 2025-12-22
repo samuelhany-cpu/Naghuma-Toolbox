@@ -1,0 +1,19 @@
+{
+    "VcpkgPath":  "F:\\Naghuma Toolbox\\vcpkg",
+    "InstalledLanguages":  [
+                               "eng",
+                               "ara",
+                               "fra",
+                               "deu",
+                               "spa",
+                               "chi_sim",
+                               "jpn"
+                           ],
+    "Version":  "5.3.3",
+    "BinPath":  "F:\\Naghuma Toolbox\\vcpkg\\installed\\x64-windows\\bin",
+    "LibPath":  "F:\\Naghuma Toolbox\\vcpkg\\installed\\x64-windows\\lib",
+    "TesseractPath":  "C:\\Program Files\\Tesseract-OCR",
+    "TessdataPath":  "C:\\Program Files\\Tesseract-OCR\\tessdata",
+    "ProjectLocal":  true,
+    "IncludePath":  "F:\\Naghuma Toolbox\\vcpkg\\installed\\x64-windows\\include"
+}

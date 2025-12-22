@@ -350,3 +350,4 @@ void CompressionDialog::onCancelClicked() {
     applied = false;
     reject();
 }
+#include "moc_CompressionDialog.cpp"

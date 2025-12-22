@@ -297,3 +297,4 @@ void IntensityTransformDialog::onApplyClicked() {
         accept();
     }
 }
+#include "moc_IntensityTransformDialog.cpp"

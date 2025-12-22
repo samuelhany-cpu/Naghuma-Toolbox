@@ -426,3 +426,4 @@ void WaveletDialog::onResetClicked() {
     
     updatePreview();
 }
+#include "moc_WaveletDialog.cpp"

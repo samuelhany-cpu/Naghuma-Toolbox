@@ -344,3 +344,4 @@ void SharpeningDialog::onApplyClicked() {
         accept();
     }
 }
+#include "moc_SharpeningDialog.cpp"

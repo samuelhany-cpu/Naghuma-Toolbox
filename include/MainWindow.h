@@ -17,6 +17,7 @@
 class ImageCanvas;
 class RightSidebarWidget;
 class CropTool;
+class SelectionTool;
 class CollapsibleToolbar;
 class ROIManager;
 class RectangleROI;
@@ -74,6 +75,20 @@ private slots:
     void onROIMousePress(const QPoint& pos);
     void onROIMouseMove(const QPoint& pos);
     void onROIMouseRelease(const QPoint& pos);
+    
+    // Brush/Mask Tool - NEW
+    void toggleSelectionMode();
+    void setSelectionMethod(int method);  // 0=Rect, 1=Polygon, 2=MagicWand, 3=Threshold, 4=Edge
+    void clearSelection();
+    void applyMagicWand();
+    void applyThresholdSelection();
+    void saveSelectionAsLayer();  // Save current selection mask as a layer
+    void loadSelectionFromLayer(int layerIndex);  // Load selection from a layer
+    void onSelectionMousePress(const QPoint& pos);
+    void onSelectionMouseMove(const QPoint& pos);
+    void onSelectionMouseRelease(const QPoint& pos);
+    void onSelectionUpdated();
+    void onSelectionCompleted();
     
     // Compression
     void applyCompression();
@@ -142,6 +157,19 @@ private slots:
     // Phase 21: Intensity Transformations & Edge Enhancement - NEW
     void showIntensityTransformDialog();
     void showSharpeningDialog();
+    
+    // Phase 22: Huffman Coding - NEW
+    void showHuffmanDialog();
+    void showOCRDialog();  // Phase 23: OCR
+    
+    // Image Restoration & Distortion Correction - NEW
+    void applyWienerRestoration();
+    void applyMotionBlurRestoration();
+    void applyAtmosphericRestoration();
+    void correctBarrel();
+    void correctPincushion();
+    void correctPerspective();
+    void correctKeystone();
 
     // Morphology Operations
     void applyErosion();
@@ -217,6 +245,10 @@ private:
     CropTool *cropTool;
     bool cropMode;
     cv::Mat cropPreviewImage;
+    
+    // Selection tool - NEW
+    SelectionTool *selectionTool;
+    bool selectionMode;
     
     // ROI tool - NEW
     ROIManager *roiManager;

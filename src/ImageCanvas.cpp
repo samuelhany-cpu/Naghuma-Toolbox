@@ -297,3 +297,5 @@ QPoint ImageCanvas::mapToImageCoords(const QPoint& widgetPos) {
     
     return QPoint(imageX, imageY);
 }
+
+#include "moc_ImageCanvas.cpp"

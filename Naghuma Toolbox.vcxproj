@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -26,141 +26,176 @@
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
+      <AdditionalOptions>/Zm200 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)lib;F:\OpenCV\opencv\build\include;C:\Qt\6.7.3\msvc2019_64\include;C:\Qt\6.7.3\msvc2019_64\include\QtCore;C:\Qt\6.7.3\msvc2019_64\include\QtGui;C:\Qt\6.7.3\msvc2019_64\include\QtWidgets;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\Naghuma Toolbox\vcpkg\installed\x64-windows\include;C:\Program Files\Tesseract-OCR\include\leptonica;C:\Program Files\Tesseract-OCR\include;C:\Program Files\Tesseract-OCR\include\leptonica;$(ProjectDir)include;$(ProjectDir)lib;F:\OpenCV\opencv\build\include;C:\Qt\6.7.3\msvc2019_64\include;C:\Qt\6.7.3\msvc2019_64\include\QtCore;C:\Qt\6.7.3\msvc2019_64\include\QtGui;C:\Qt\6.7.3\msvc2019_64\include\QtWidgets;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>F:\OpenCV\opencv\build\x64\vc15\lib;C:\Qt\6.7.3\msvc2019_64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opencv_world430d.lib;Qt6Cored.lib;Qt6Guid.lib;Qt6Widgetsd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>F:\Naghuma Toolbox\vcpkg\installed\x64-windows\lib;C:\Program Files\Tesseract-OCR\lib;F:\OpenCV\opencv\build\x64\vc15\lib;C:\Qt\6.7.3\msvc2019_64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>tesseract55.lib;leptonica-1.85.0.lib;opencv_world430d.lib;Qt6Cored.lib;Qt6Guid.lib;Qt6Widgetsd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="lib\color\ColorProcessor.cpp" />
     <ClCompile Include="lib\color\ColorSpace.cpp" />
+    <ClCompile Include="lib\compression\HuffmanCoding.cpp" />
+    <ClCompile Include="lib\filters\ImageFilters.cpp" />
+    <ClCompile Include="lib\histogram\HistogramOperations.cpp" />
+    <ClCompile Include="lib\ocr\TextRecognition.cpp" />
+    <ClCompile Include="lib\transforms\ImageTransforms.cpp" />
+    <ClCompile Include="src\AdjustmentDialog.cpp" />
+    <ClCompile Include="src\AutoEnhanceDialog.cpp" />
+    <ClCompile Include="src\CollapsibleToolbar.cpp" />
     <ClCompile Include="src\ColorConversionDialog.cpp" />
+    <ClCompile Include="src\ColorProcessingDialog.cpp" />
+    <ClCompile Include="src\CompressionDialog.cpp" />
+    <ClCompile Include="src\CropTool.cpp" />
+    <ClCompile Include="src\SelectionTool.cpp" />
+    <ClCompile Include="src\FeatureDetectionDialog.cpp" />
+    <ClCompile Include="src\FontAwesomeIcon.cpp" />
+    <ClCompile Include="src\FrequencyFilterDialog.cpp" />
+    <ClCompile Include="src\GPUAccelerator.cpp" />
+    <ClCompile Include="src\HistogramWidget.cpp" />
+    <ClCompile Include="src\HuffmanDialog.cpp" />
+    <ClCompile Include="src\ImageCanvas.cpp" />
+    <ClCompile Include="src\ImageMetrics.cpp" />
+    <ClCompile Include="src\ImageProcessor.cpp" />
+    <ClCompile Include="src\IntensityTransformDialog.cpp" />
+    <ClCompile Include="src\LayerManager.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\MainWindow.cpp" />
-    <ClCompile Include="src\ImageCanvas.cpp" />
-    <ClCompile Include="src\ImageProcessor.cpp" />
-    <ClCompile Include="src\CropTool.cpp" />
-    <ClCompile Include="src\moc_CropTool.cpp" />
-    <ClCompile Include="src\CompressionDialog.cpp" />
-    <ClCompile Include="src\moc_CompressionDialog.cpp" />
-    <ClCompile Include="src\moc_SegmentationDialog.cpp" />
-    <ClCompile Include="src\FeatureDetectionDialog.cpp" />
-    <ClCompile Include="src\FrequencyFilterDialog.cpp" />
-    <ClCompile Include="src\moc_FeatureDetectionDialog.cpp" />
-    <ClCompile Include="src\FrequencyFilterDialog.cpp" />
-    <ClCompile Include="src\moc_FrequencyFilterDialog.cpp" />
-    <ClCompile Include="src\AutoEnhanceDialog.cpp" />
-    <ClCompile Include="src\moc_AutoEnhanceDialog.cpp" />
+    <ClCompile Include="src\MainWindow_Phase21.cpp" />
+    <ClCompile Include="src\MainWindow_Phase22.cpp" />
+    <ClCompile Include="src\MainWindow_Phase23_OCR.cpp" />
     <ClCompile Include="src\NoiseRemovalDialog.cpp" />
-    <ClCompile Include="src\moc_NoiseRemovalDialog.cpp" />
-    <ClCompile Include="src\CollapsibleToolbar.cpp" />
-    <ClCompile Include="src\moc_CollapsibleToolbar.cpp" />
+    <ClCompile Include="src\OCRDialog.cpp" />
+    <ClCompile Include="src\moc_OCRDialog.cpp" />
+    <ClCompile Include="src\moc_SelectionTool.cpp" />
+    <ClCompile Include="src\qrc_fonts.cpp" />
     <ClCompile Include="src\qrc_icons.cpp" />
-    <ClCompile Include="src\ROIShape.cpp" />
-    <ClCompile Include="src\ROIManager.cpp" />
-    <ClCompile Include="src\moc_ROIManager.cpp" />
+    <ClCompile Include="src\RightSidebarWidget.cpp" />
     <ClCompile Include="src\ROIDialog.cpp" />
-    <ClCompile Include="src\moc_ROIDialog.cpp" />
-    <ClCompile Include="src\HistogramWidget.cpp" />
+    <ClCompile Include="src\ROIManager.cpp" />
+    <ClCompile Include="src\ROIShape.cpp" />
     <ClCompile Include="src\SegmentationDialog.cpp" />
+    <ClCompile Include="src\SharpeningDialog.cpp" />
     <ClCompile Include="src\ThresholdingDialog.cpp" />
     <ClCompile Include="src\TransformDialog.cpp" />
-    <ClCompile Include="src\RightSidebarWidget.cpp" />
-    <ClCompile Include="src\LayerManager.cpp" />
-    <ClCompile Include="src\ImageMetrics.cpp" />
-    <ClCompile Include="src\AdjustmentDialog.cpp" />
-    <ClCompile Include="lib\filters\ImageFilters.cpp" />
-    <ClCompile Include="src\moc_MainWindow.cpp" />
-    <ClCompile Include="src\moc_ImageCanvas.cpp" />
-    <ClCompile Include="src\moc_HistogramWidget.cpp" />
-    <ClCompile Include="src\moc_TransformDialog.cpp" />
-    <ClCompile Include="src\moc_RightSidebarWidget.cpp" />
-    <ClCompile Include="src\moc_LayerManager.cpp" />
-    <ClCompile Include="src\moc_AdjustmentDialog.cpp" />
-    <ClCompile Include="src\qrc_fonts.cpp" />
-    <ClCompile Include="src\FontAwesomeIcon.cpp" />
-    <ClCompile Include="lib\color\ColorProcessor.cpp" />
-    <ClCompile Include="src\ColorProcessingDialog.cpp" />
-    <ClCompile Include="src\moc_ColorProcessingDialog.cpp" />
-    <ClCompile Include="src\WaveletTransform.cpp" />
     <ClCompile Include="src\WaveletDialog.cpp" />
-    <ClCompile Include="src\moc_WaveletDialog.cpp" />
+    <ClCompile Include="src\WaveletTransform.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\AdjustmentDialog.h" />
+    <ClInclude Include="include\AutoEnhanceDialog.h" />
+    <ClInclude Include="include\CannyDialog.h" />
+    <ClInclude Include="include\CollapsibleToolbar.h" />
     <ClInclude Include="include\ColorConversionDialog.h" />
     <ClInclude Include="include\ColorProcessingDialog.h" />
-    <ClInclude Include="include\MainWindow.h" />
-    <ClInclude Include="include\ImageCanvas.h" />
-    <ClInclude Include="include\ImageProcessor.h" />
-    <ClInclude Include="include\CropTool.h" />
     <ClInclude Include="include\CompressionDialog.h" />
-    <ClInclude Include="include\AutoEnhanceDialog.h" />
-    <ClInclude Include="include\NoiseRemovalDialog.h" />
-    <ClInclude Include="include\CollapsibleToolbar.h" />
-    <ClInclude Include="include\ROIShape.h" />
-    <ClInclude Include="include\ROIManager.h" />
-    <ClInclude Include="include\ROIDialog.h" />
-    <ClInclude Include="include\HistogramWidget.h" />
-    <ClInclude Include="include\SegmentationDialog.h" />
+    <ClInclude Include="include\CropTool.h" />
+    <ClInclude Include="include\SelectionTool.h" />
     <ClInclude Include="include\FeatureDetectionDialog.h" />
+    <ClInclude Include="include\FontAwesomeIcon.h" />
     <ClInclude Include="include\FrequencyFilterDialog.h" />
+    <ClInclude Include="include\GPUAccelerator.h" />
+    <ClInclude Include="include\HistogramWidget.h" />
+    <ClInclude Include="include\HuffmanDialog.h" />
+    <ClInclude Include="include\ImageCanvas.h" />
+    <ClInclude Include="include\ImageMetrics.h" />
+    <ClInclude Include="include\ImageProcessor.h" />
+    <ClInclude Include="include\IntensityTransformDialog.h" />
+    <ClInclude Include="include\LayerManager.h" />
+    <ClInclude Include="include\MainWindow.h" />
+    <ClInclude Include="include\MainWindow_Macros.h" />
+    <ClInclude Include="include\NoiseRemovalDialog.h" />
+    <ClInclude Include="include\OCRDialog.h" />
+    <ClInclude Include="include\QtAwesomeEnumGenerated.h" />
+    <ClInclude Include="include\RightSidebarWidget.h" />
+    <ClInclude Include="include\ROIDialog.h" />
+    <ClInclude Include="include\ROIManager.h" />
+    <ClInclude Include="include\ROIShape.h" />
+    <ClInclude Include="include\SegmentationDialog.h" />
+    <ClInclude Include="include\SharpeningDialog.h" />
+    <ClInclude Include="include\Theme.h" />
     <ClInclude Include="include\ThresholdingDialog.h" />
     <ClInclude Include="include\TransformDialog.h" />
-    <ClInclude Include="include\RightSidebarWidget.h" />
-    <ClInclude Include="include\LayerManager.h" />
-    <ClInclude Include="include\ImageMetrics.h" />
-    <ClInclude Include="include\AdjustmentDialog.h" />
-    <ClInclude Include="include\filters\ImageFilters.h" />
-    <ClInclude Include="include\FontAwesomeIcon.h" />
-    <ClInclude Include="lib\color\ColorSpace.h" />
-    <ClInclude Include="lib\color\ColorProcessor.h" />
-    <ClInclude Include="include\WaveletTransform.h" />
     <ClInclude Include="include\WaveletDialog.h" />
+    <ClInclude Include="include\WaveletTransform.h" />
+    <ClInclude Include="lib\color\ColorProcessor.h" />
+    <ClInclude Include="lib\color\ColorSpace.h" />
+    <ClInclude Include="lib\compression\HuffmanCoding.h" />
+    <ClInclude Include="lib\filters\ImageFilters.h" />
+    <ClInclude Include="lib\histogram\HistogramOperations.h" />
+    <ClInclude Include="lib\ocr\TextRecognition.h" />
+    <ClInclude Include="lib\transforms\ImageTransforms.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="apply_phase13_edge_detectors.ps1" />
-    <None Include="BUILD_SUCCESS_SUMMARY.ps1" />
-    <None Include="build_with_moc.ps1" />
-    <None Include="complete_fix.ps1" />
-    <None Include="CONSOLE_WARNINGS_FIX.md" />
-    <None Include="create_working_moc.ps1" />
-    <None Include="docs\Phase17_Quick_Reference.md" />
-    <None Include="docs\Phase17_Testing_Guide.md" />
-    <None Include="final_moc_build.ps1" />
-    <None Include="FONT_AWESOME_SUCCESS.md" />
-    <None Include="generate_moc.ps1" />
-    <None Include="generate_moc_proper.ps1" />
-    <None Include="gen_threshold_moc.ps1" />
-    <None Include="ICON_SYSTEM_FINAL.md" />
-    <None Include="PHASE11_ZOOM_PAN_COMPLETE.md" />
-    <None Include="PHASE11_ZOOM_PAN_PLAN.md" />
-    <None Include="PHASE12_ROI_COMPLETE.md" />
-    <None Include="PHASE12_SUCCESS_REPORT.md" />
-    <None Include="PHASE13_EDGE_DETECTORS_COMPLETE.md" />
-    <None Include="PHASE13_QUICK_START.md" />
-    <None Include="PHASE8_AUTO_ENHANCE_COMPLETE.md" />
-    <None Include="PHASE8_GITHUB_UPLOAD.md" />
-    <None Include="PHASE9_NOISE_REMOVAL_COMPLETE.md" />
-    <None Include="PROJECT_COMPLETE.md" />
-    <None Include="QUICK_FIX.md" />
-    <None Include="README.md" />
-    <None Include="regenerate_moc_and_build.ps1" />
-    <None Include="scripts\add_new_files.ps1" />
-    <None Include="update_project_threshold.ps1" />
-    <None Include="use_qt_moc.ps1" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="FIX_DRAWING_CRASH.txt" />
-    <Text Include="phase13_functions.txt" />
+    <None Include="add_missing_moc_includes.ps1" />
+    <None Include="add_moc_includes_to_cpp.ps1" />
+    <None Include="add_ocr_files_to_project.ps1" />
+    <None Include="ALL_DLLS_COMPLETE.md" />
+    <None Include="ALL_DLLS_COPIED_READY.md" />
+    <None Include="ALL_DLLS_READY.bat" />
+    <None Include="APPLICATION_EXIT_DIAGNOSIS.md" />
+    <None Include="BUILD_OCR_COMPLETE.ps1" />
+    <None Include="build_ready_final.ps1" />
+    <None Include="clear_vs_cache.ps1" />
+    <None Include="complete_fix_summary.ps1" />
+    <None Include="CONTRIBUTING.md" />
+    <None Include="copy_all_tesseract_dlls.bat" />
+    <None Include="copy_all_tesseract_dlls_complete.ps1" />
+    <None Include="diagnose_dll_issue.ps1" />
+    <None Include="FINAL_SOLUTION.ps1" />
+    <None Include="fix_filters_file.ps1" />
+    <None Include="fix_mainwindow_moc.ps1" />
+    <None Include="fix_missing_dlls.ps1" />
+    <None Include="fix_ocr_build_complete.ps1" />
+    <None Include="fix_ocr_master.ps1" />
+    <None Include="fix_ocr_moc.ps1" />
+    <None Include="force_moc_compile.ps1" />
+    <None Include="generate_missing_moc.ps1" />
+    <None Include="GITHUB_UPLOAD_GUIDE.md" />
+    <None Include="HUFFMAN_COMPLETE_FINAL.md" />
+    <None Include="HUFFMAN_READY_TO_BUILD.ps1" />
+    <None Include="LICENSE" />
+    <None Include="OCR_ALL_ERRORS_FIXED.ps1" />
+    <None Include="OCR_BULLETPROOF_REBUILD.bat" />
+    <None Include="OCR_CRASH_FIXED_PIX.md" />
+    <None Include="OCR_CRASH_FIXED_REBUILD.bat" />
+    <None Include="OCR_DELETE_PROTECTION_FINAL.md" />
+    <None Include="OCR_ERRORS_FIXED_COMPLETE.md" />
+    <None Include="OCR_FIXED_COMPLETE.md" />
+    <None Include="OCR_FIXED_REBUILD.bat" />
+    <None Include="OCR_FIXED_RUN.bat" />
+    <None Include="OCR_HEAP_CORRUPTION_FIXED.md" />
+    <None Include="OCR_INCLUDE_FIXED.ps1" />
+    <None Include="OCR_MEMORY_FIX_REBUILD.bat" />
+    <None Include="OCR_NULL_FIX_REBUILD.bat" />
+    <None Include="OCR_NULL_POINTER_FINAL_FIX.md" />
+    <None Include="OCR_ROOT_CAUSE_FIXED.md" />
+    <None Include="OCR_STRING_FIX_REBUILD.bat" />
+    <None Include="OCR_STRING_LIFETIME_FIX.md" />
+    <None Include="OCR_TESSERACT_MEMORY_FIX.md" />
+    <None Include="PROJECT_COMPLETE_FINAL.md" />
+    <None Include="READY_TO_BUILD.bat" />
+    <None Include="READY_TO_RUN_OCR.bat" />
+    <None Include="restore_and_fix_mainwindow.ps1" />
+    <None Include="run_and_diagnose.bat" />
+    <None Include="run_debug_app.ps1" />
+    <None Include="setup_ocr_and_build.ps1" />
+    <None Include="switch_to_release.ps1" />
+    <None Include="SWITCH_TO_RELEASE_BUILD.md" />
+    <None Include="TESSERACT_READY_TO_BUILD.md" />
+    <None Include="verify_all_dlls.ps1" />
+    <None Include="verify_moc_includes.ps1" />
+    <None Include="verify_tesseract_dlls.ps1" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

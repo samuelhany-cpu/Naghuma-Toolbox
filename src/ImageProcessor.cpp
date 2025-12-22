@@ -509,3 +509,189 @@ void ImageProcessor::applyVariableThreshold(const cv::Mat& src, cv::Mat& dst, do
     
     cv::threshold(gray, dst, threshold, 255, cv::THRESH_BINARY);
 }
+
+// ============================================================================
+// IMAGE RESTORATION
+// ============================================================================
+
+void ImageProcessor::applyWienerFilter(const cv::Mat& src, cv::Mat& dst, const cv::Mat& psf, double noiseVariance) {
+    // Convert to grayscale if needed
+    cv::Mat gray;
+    if (src.channels() == 3) {
+        cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
+    } else {
+        gray = src.clone();
+    }
+    
+    // Convert to float
+    cv::Mat floatImg;
+    gray.convertTo(floatImg, CV_32F);
+    
+    // Perform FFT on image
+    cv::Mat planes[] = {floatImg, cv::Mat::zeros(floatImg.size(), CV_32F)};
+    cv::Mat complexImg;
+    cv::merge(planes, 2, complexImg);
+    cv::dft(complexImg, complexImg);
+    
+    // Perform FFT on PSF
+    cv::Mat psfPadded = cv::Mat::zeros(floatImg.size(), CV_32F);
+    psf.copyTo(psfPadded(cv::Rect(0, 0, psf.cols, psf.rows)));
+    cv::Mat psfPlanes[] = {psfPadded, cv::Mat::zeros(psfPadded.size(), CV_32F)};
+    cv::Mat complexPSF;
+    cv::merge(psfPlanes, 2, complexPSF);
+    cv::dft(complexPSF, complexPSF);
+    
+    // Wiener filter: H*(f) / (|H(f)|^2 + K)
+    cv::Mat result = cv::Mat::zeros(complexImg.size(), CV_32FC2);
+    for (int i = 0; i < complexImg.rows; i++) {
+        for (int j = 0; j < complexImg.cols; j++) {
+            cv::Vec2f h = complexPSF.at<cv::Vec2f>(i, j);
+            cv::Vec2f g = complexImg.at<cv::Vec2f>(i, j);
+            
+            float h_conj_real = h[0];
+            float h_conj_imag = -h[1];
+            float h_mag_sq = h[0]*h[0] + h[1]*h[1];
+            
+            float denom = h_mag_sq + noiseVariance;
+            if (denom > 0) {
+                result.at<cv::Vec2f>(i, j)[0] = (h_conj_real * g[0] - h_conj_imag * g[1]) / denom;
+                result.at<cv::Vec2f>(i, j)[1] = (h_conj_real * g[1] + h_conj_imag * g[0]) / denom;
+            }
+        }
+    }
+    
+    // Inverse FFT
+    cv::idft(result, result);
+    
+    // Extract magnitude
+    cv::Mat restoredPlanes[2];
+    cv::split(result, restoredPlanes);
+    cv::normalize(restoredPlanes[0], dst, 0, 255, cv::NORM_MINMAX);
+    dst.convertTo(dst, CV_8U);
+}
+
+void ImageProcessor::applyCLSRestoration(const cv::Mat& src, cv::Mat& dst, const cv::Mat& psf, double gamma) {
+    // Simplified CLS restoration using regularized inverse filter
+    cv::Mat kernel = psf.clone();
+    if (kernel.empty() || kernel.rows < 3 || kernel.cols < 3) {
+        // Create default motion blur kernel
+        kernel = cv::Mat::zeros(15, 15, CV_32F);
+        for (int i = 0; i < 15; i++) {
+            kernel.at<float>(7, i) = 1.0f / 15.0f;
+        }
+    }
+    
+    // Apply Wiener filter with CLS regularization
+    applyWienerFilter(src, dst, kernel, gamma);
+}
+
+void ImageProcessor::applyInverseFilter(const cv::Mat& src, cv::Mat& dst, const cv::Mat& psf, double epsilon) {
+    // Inverse filtering with small epsilon to avoid division by zero
+    applyWienerFilter(src, dst, psf, epsilon);
+}
+
+void ImageProcessor::restoreMotionBlur(const cv::Mat& src, cv::Mat& dst, int length, double angle) {
+    // Create motion blur PSF
+    cv::Mat psf = cv::Mat::zeros(length, length, CV_32F);
+    double angleRad = angle * CV_PI / 180.0;
+    cv::Point center(length/2, length/2);
+    
+    for (int i = 0; i < length; i++) {
+        int x = center.x + static_cast<int>((i - length/2) * cos(angleRad));
+        int y = center.y + static_cast<int>((i - length/2) * sin(angleRad));
+        if (x >= 0 && x < length && y >= 0 && y < length) {
+            psf.at<float>(y, x) = 1.0f / length;
+        }
+    }
+    
+    // Apply Wiener restoration
+    applyWienerFilter(src, dst, psf, 0.01);
+}
+
+void ImageProcessor::restoreAtmosphericBlur(const cv::Mat& src, cv::Mat& dst, double k) {
+    // Create Gaussian PSF for atmospheric blur
+    int kernelSize = 15;
+    cv::Mat psf = cv::getGaussianKernel(kernelSize, k * kernelSize, CV_32F);
+    psf = psf * psf.t();
+    
+    // Apply restoration
+    applyWienerFilter(src, dst, psf, 0.001);
+}
+
+// ============================================================================
+// GEOMETRIC DISTORTION CORRECTION
+// ============================================================================
+
+void ImageProcessor::correctBarrelDistortion(const cv::Mat& src, cv::Mat& dst, double k1, double k2) {
+    cv::Mat map_x, map_y;
+    map_x.create(src.size(), CV_32FC1);
+    map_y.create(src.size(), CV_32FC1);
+    
+    float cx = src.cols / 2.0f;
+    float cy = src.rows / 2.0f;
+    float maxRadius = sqrt(cx*cx + cy*cy);
+    
+    for (int i = 0; i < src.rows; i++) {
+        for (int j = 0; j < src.cols; j++) {
+            float x = (j - cx) / maxRadius;
+            float y = (i - cy) / maxRadius;
+            float r = sqrt(x*x + y*y);
+            
+            // Barrel distortion formula: rd = r * (1 + k1*r^2 + k2*r^4)
+            float r_dist = r * (1.0f + k1*r*r + k2*r*r*r*r);
+            
+            float x_dist = x * r_dist / (r + 1e-6);
+            float y_dist = y * r_dist / (r + 1e-6);
+            
+            map_x.at<float>(i, j) = x_dist * maxRadius + cx;
+            map_y.at<float>(i, j) = y_dist * maxRadius + cy;
+        }
+    }
+    
+    cv::remap(src, dst, map_x, map_y, cv::INTER_LINEAR, cv::BORDER_CONSTANT);
+}
+
+void ImageProcessor::correctPincushionDistortion(const cv::Mat& src, cv::Mat& dst, double k1, double k2) {
+    // Pincushion is negative barrel distortion
+    correctBarrelDistortion(src, dst, -k1, -k2);
+}
+
+void ImageProcessor::correctPerspectiveDistortion(const cv::Mat& src, cv::Mat& dst, 
+                                                  const std::vector<cv::Point2f>& srcPoints,
+                                                  const std::vector<cv::Point2f>& dstPoints) {
+    if (srcPoints.size() < 4 || dstPoints.size() < 4) {
+        // Need at least 4 points for perspective transform
+        src.copyTo(dst);
+        return;
+    }
+    
+    // Get perspective transformation matrix
+    cv::Mat M = cv::getPerspectiveTransform(srcPoints, dstPoints);
+    
+    // Apply perspective warp
+    cv::warpPerspective(src, dst, M, src.size());
+}
+
+void ImageProcessor::correctKeystoneDistortion(const cv::Mat& src, cv::Mat& dst, double angle) {
+    // Create keystone correction points
+    std::vector<cv::Point2f> srcPoints(4);
+    std::vector<cv::Point2f> dstPoints(4);
+    
+    float w = src.cols;
+    float h = src.rows;
+    float offset = tan(angle * CV_PI / 180.0) * h * 0.5f;
+    
+    // Source points (trapezoid)
+    srcPoints[0] = cv::Point2f(0, 0);
+    srcPoints[1] = cv::Point2f(w, 0);
+    srcPoints[2] = cv::Point2f(w, h);
+    srcPoints[3] = cv::Point2f(0, h);
+    
+    // Destination points (rectangle with keystone correction)
+    dstPoints[0] = cv::Point2f(offset, 0);
+    dstPoints[1] = cv::Point2f(w - offset, 0);
+    dstPoints[2] = cv::Point2f(w, h);
+    dstPoints[3] = cv::Point2f(0, h);
+    
+    correctPerspectiveDistortion(src, dst, srcPoints, dstPoints);
+}

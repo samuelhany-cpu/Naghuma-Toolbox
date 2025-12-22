@@ -7,6 +7,7 @@
 #include "TransformDialog.h"
 #include "AdjustmentDialog.h"
 #include "CropTool.h"
+#include "SelectionTool.h"
 #include "CompressionDialog.h"
 #include "AutoEnhanceDialog.h"
 #include "NoiseRemovalDialog.h"
@@ -34,15 +35,25 @@
 #include "color/ColorProcessor.h"  // Add this line
 #include "ImageMetrics.h"
 #include "WaveletDialog.h"
+#include "IntensityTransformDialog.h"  // Phase 21
+#include "SharpeningDialog.h"  // Phase 21
+#include "HuffmanDialog.h"  // Phase 22
+
+#include "OCRDialog.h"  // Phase 23
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), imageLoaded(false), recentlyProcessed(false), cropMode(false) {
+    : QMainWindow(parent), imageLoaded(false), recentlyProcessed(false), cropMode(false), selectionMode(false) {
     
     setWindowTitle("Naghuma Toolbox - Image Processing Suite");
     setMinimumSize(1600, 900);
     
     // Initialize crop tool
     cropTool = new CropTool(this);
+    
+    // Initialize selection tool
+    selectionTool = new SelectionTool(this);
+    connect(selectionTool, &SelectionTool::selectionUpdated, this, &MainWindow::onSelectionUpdated);
+    connect(selectionTool, &SelectionTool::selectionCompleted, this, &MainWindow::onSelectionCompleted);
     
     // Initialize ROI tool
     roiManager = new ROIManager(this);
@@ -116,14 +127,14 @@ void MainWindow::createMenuBar() {
     
     // Transform Menu
     QMenu *transformMenu = menuBar->addMenu("Transform");
-    ADD_MENU_ACTION(transformMenu, "Translation", applyTranslation);
-    ADD_MENU_ACTION(transformMenu, "Rotation", applyRotation);
-    ADD_MENU_ACTION(transformMenu, "Skew", applySkew);
-    ADD_MENU_ACTION(transformMenu, "Zoom", applyZoom);
+    ADD_MENU_ACTION(transformMenu, "Translate (Move)", applyTranslation);
+    ADD_MENU_ACTION(transformMenu, "Rotate", applyRotation);
+    ADD_MENU_ACTION(transformMenu, "Skew (Shear)", applySkew);
+    ADD_MENU_ACTION(transformMenu, "Scale (Resize)", applyZoom);
     transformMenu->addSeparator();
-    ADD_MENU_ACTION(transformMenu, "Flip Horizontal", applyFlipX);
-    ADD_MENU_ACTION(transformMenu, "Flip Vertical", applyFlipY);
-    ADD_MENU_ACTION(transformMenu, "Flip Both", applyFlipXY);
+    ADD_MENU_ACTION(transformMenu, "Flip Horizontally", applyFlipX);
+    ADD_MENU_ACTION(transformMenu, "Flip Vertically", applyFlipY);
+    ADD_MENU_ACTION(transformMenu, "Flip Both Axes", applyFlipXY);
     transformMenu->addSeparator();
     
     // Crop submenu
@@ -136,41 +147,57 @@ void MainWindow::createMenuBar() {
     // Histogram Menu
     QMenu *histMenu = menuBar->addMenu("Histogram");
     ADD_MENU_ACTION(histMenu, "Show Histogram", showHistogram);
-    ADD_MENU_ACTION(histMenu, "Equalization", applyHistogramEqualization);
-    ADD_MENU_ACTION(histMenu, "Otsu Thresholding", applyOtsuThresholding);
+    ADD_MENU_ACTION(histMenu, "Histogram Equalization", applyHistogramEqualization);
+    ADD_MENU_ACTION(histMenu, "Otsu Auto-Threshold", applyOtsuThresholding);
     
     // Process Menu
     QMenu *processMenu = menuBar->addMenu("Process");
-    ADD_MENU_ACTION(processMenu, "Brightness/Contrast", applyBrightnessContrast);
+    ADD_MENU_ACTION(processMenu, "Adjust Brightness/Contrast...", applyBrightnessContrast);
     processMenu->addSeparator();
     ADD_MENU_ACTION(processMenu, "Auto Enhance...", applyAutoEnhancement);
     ADD_MENU_ACTION(processMenu, "Noise Removal...", applyNoiseRemoval);
     processMenu->addSeparator();
-    ADD_MENU_ACTION(processMenu, "Grayscale", convertToGrayscale);
+    ADD_MENU_ACTION(processMenu, "Convert to Grayscale", convertToGrayscale);
     ADD_MENU_ACTION(processMenu, "Binary Threshold", applyBinaryThreshold);
-    ADD_MENU_ACTION(processMenu, "Gaussian Blur", applyGaussianBlur);
-    ADD_MENU_ACTION(processMenu, "Edge Detection", applyEdgeDetection);
+    ADD_MENU_ACTION(processMenu, "Gaussian Blur (Smooth)", applyGaussianBlur);
+    ADD_MENU_ACTION(processMenu, "Edge Detection (Canny)", applyEdgeDetection);
     ADD_MENU_ACTION(processMenu, "Invert Colors", invertColors);
     processMenu->addSeparator();
     ADD_MENU_ACTION(processMenu, "Compress Image...", applyCompression);
+
+    processMenu->addSeparator();
+
+    // Phase 22: Huffman Coding
+    ADD_MENU_ACTION(processMenu, "Huffman Coding...", showHuffmanDialog);
+    // Phase 23: OCR (Optical Character Recognition)
+    ADD_MENU_ACTION(processMenu, "OCR - Text Recognition...", showOCRDialog);
+
+    processMenu->addSeparator();
+
+    // Phase 21: Intensity Transformations & Edge Enhancement
+    QMenu* intensityMenu = processMenu->addMenu("Intensity Transformations");
+    ADD_MENU_ACTION(intensityMenu, "Gamma & Log Transform...", showIntensityTransformDialog);
+
+    QMenu* sharpenMenu = processMenu->addMenu("Sharpening Filters");
+    ADD_MENU_ACTION(sharpenMenu, "Laplacian/Unsharp/High-Boost...", showSharpeningDialog);
     
     // Filters Menu
     QMenu *filtersMenu = menuBar->addMenu("Filters");
-    ADD_MENU_ACTION(filtersMenu, "Laplacian Filter", applyLaplacianFilter);
-    ADD_MENU_ACTION(filtersMenu, "Sobel Filter", applySobelCombinedFilter);
-    ADD_MENU_ACTION(filtersMenu, "Traditional Filter", applyTraditionalFilter);
-    ADD_MENU_ACTION(filtersMenu, "Pyramidal Filter", applyPyramidalFilter);
-    ADD_MENU_ACTION(filtersMenu, "Circular Filter", applyCircularFilter);
-    ADD_MENU_ACTION(filtersMenu, "Cone Filter", applyConeFilter);
+    ADD_MENU_ACTION(filtersMenu, "Laplacian (2nd Derivative)", applyLaplacianFilter);
+    ADD_MENU_ACTION(filtersMenu, "Sobel (Combined X+Y)", applySobelCombinedFilter);
+    ADD_MENU_ACTION(filtersMenu, "Traditional Smoothing", applyTraditionalFilter);
+    ADD_MENU_ACTION(filtersMenu, "Pyramidal Smoothing", applyPyramidalFilter);
+    ADD_MENU_ACTION(filtersMenu, "Circular Smoothing", applyCircularFilter);
+    ADD_MENU_ACTION(filtersMenu, "Cone Smoothing", applyConeFilter);
     filtersMenu->addSeparator();
 
     // Phase 13: Basic Edge Detectors  
     QMenu* edgeMenu = filtersMenu->addMenu("Edge Detectors");
-    ADD_MENU_ACTION(edgeMenu, "Prewitt Edge Detector", applyPrewittEdge);
-    ADD_MENU_ACTION(edgeMenu, "Prewitt X (Vertical Edges)", applyPrewittX);
-    ADD_MENU_ACTION(edgeMenu, "Prewitt Y (Horizontal Edges)", applyPrewittY);
+    ADD_MENU_ACTION(edgeMenu, "Prewitt (Combined)", applyPrewittEdge);
+    ADD_MENU_ACTION(edgeMenu, "Prewitt-X (Vertical Edges)", applyPrewittX);
+    ADD_MENU_ACTION(edgeMenu, "Prewitt-Y (Horizontal Edges)", applyPrewittY);
     edgeMenu->addSeparator();
-    ADD_MENU_ACTION(edgeMenu, "Roberts Cross Operator", applyRobertsCross);
+    ADD_MENU_ACTION(edgeMenu, "Roberts Cross", applyRobertsCross);
     edgeMenu->addSeparator();
     ADD_MENU_ACTION(edgeMenu, "LoG (Laplacian of Gaussian)", applyLoG);
     ADD_MENU_ACTION(edgeMenu, "DoG (Difference of Gaussians)", applyDoG);
@@ -213,11 +240,25 @@ void MainWindow::createMenuBar() {
     ADD_MENU_ACTION(fftMenu, "High-Pass Filter", applyHighPassFilter);
     fftMenu->addSeparator();
     ADD_MENU_ACTION(fftMenu, "Advanced Frequency Filters...", showFrequencyFilterDialog);
+    
     QMenu* waveletMenu = menuBar->addMenu("Wavelet");
     ADD_MENU_ACTION(waveletMenu, "Wavelet Transform...", showWaveletDialog);
     
+    // Restoration Menu - NEW
+    QMenu *restorationMenu = menuBar->addMenu("Restoration");
+    ADD_MENU_ACTION(restorationMenu, "Wiener Filter (Deconvolution)", applyWienerRestoration);
+    ADD_MENU_ACTION(restorationMenu, "Motion Blur Restoration...", applyMotionBlurRestoration);
+    ADD_MENU_ACTION(restorationMenu, "Atmospheric Blur Restoration...", applyAtmosphericRestoration);
+    restorationMenu->addSeparator();
+    QMenu *distortionMenu = restorationMenu->addMenu("Distortion Correction");
+    ADD_MENU_ACTION(distortionMenu, "Barrel Distortion...", correctBarrel);
+    ADD_MENU_ACTION(distortionMenu, "Pincushion Distortion...", correctPincushion);
+    ADD_MENU_ACTION(distortionMenu, "Perspective Transform...", correctPerspective);
+    ADD_MENU_ACTION(distortionMenu, "Keystone Correction...", correctKeystone);
+    
     // View Menu - NEW
     QMenu *viewMenu = menuBar->addMenu("View");
+
     
     QAction *zoomInAction = viewMenu->addAction("Zoom In");
     zoomInAction->setShortcut(QKeySequence::ZoomIn);
@@ -249,6 +290,44 @@ void MainWindow::createMenuBar() {
     analysisMenu->addSeparator();
     ADD_MENU_ACTION(analysisMenu, "Save ROIs...", saveROIs);
     ADD_MENU_ACTION(analysisMenu, "Load ROIs...", loadROIs);
+    
+    analysisMenu->addSeparator();
+    
+    // Selection Tool submenu
+    QMenu *selectionMenu = analysisMenu->addMenu("Selection Tool");
+    
+    QAction *selectionModeAction = selectionMenu->addAction("Toggle Selection Mode");
+    selectionModeAction->setCheckable(true);
+    selectionModeAction->setShortcut(Qt::CTRL | Qt::Key_S);
+    connect(selectionModeAction, &QAction::triggered, this, &MainWindow::toggleSelectionMode);
+    
+    selectionMenu->addSeparator();
+    QMenu *methodMenu = selectionMenu->addMenu("Selection Method");
+    
+    QAction *rectAction = methodMenu->addAction("Rectangle Selection");
+    connect(rectAction, &QAction::triggered, this, [this]() { setSelectionMethod(0); });
+    
+    QAction *polyAction = methodMenu->addAction("Polygon/Lasso Selection");
+    connect(polyAction, &QAction::triggered, this, [this]() { setSelectionMethod(1); });
+    
+    QAction *wandAction = methodMenu->addAction("Magic Wand (Click Color)");
+    connect(wandAction, &QAction::triggered, this, [this]() { setSelectionMethod(2); applyMagicWand(); });
+    
+    QAction *threshAction = methodMenu->addAction("Threshold-Based Selection");
+    connect(threshAction, &QAction::triggered, this, [this]() { setSelectionMethod(3); applyThresholdSelection(); });
+    
+    QAction *edgeAction = methodMenu->addAction("Edge-Based Selection");
+    connect(edgeAction, &QAction::triggered, this, [this]() { setSelectionMethod(4); });
+    
+    selectionMenu->addSeparator();
+    ADD_MENU_ACTION(selectionMenu, "Clear Selection", clearSelection);
+    
+    selectionMenu->addSeparator();
+    QAction *saveSelAction = selectionMenu->addAction("Save Selection as Layer");
+    connect(saveSelAction, &QAction::triggered, this, &MainWindow::saveSelectionAsLayer);
+    
+    // Note: Load from layer would require a layer picker dialog, 
+    // so we'll add it via right-click on layer in the future
 }
 
 void MainWindow::createToolBar() {
@@ -317,8 +396,7 @@ void MainWindow::createCentralWidget() {
     leftToolbar = new CollapsibleToolbar(this);
     leftToolbar->setToolbarWidth(200);
     
-    // Add tools to toolbar with simple text icons that work everywhere
-    // Using single capital letters for maximum compatibility
+    // Essential tools only - other features available via menus
     leftToolbar->addTool("Load", "Load an image file", [this]() { loadImage(); }, 0xf07c);  // fa-folder-open
     leftToolbar->addTool("Save", "Save processed image", [this]() { saveImage(); }, 0xf0c7);  // fa-save
     leftToolbar->addSeparator();
@@ -327,16 +405,7 @@ void MainWindow::createCentralWidget() {
     leftToolbar->addTool("Undo", "Undo last operation", [this]() { undoLastOperation(); }, 0xf0e2);  // fa-undo
     leftToolbar->addSeparator();
     
-    leftToolbar->addTool("Crop", "Toggle crop mode", [this]() { toggleCropMode(); }, 0xf125);  // fa-crop
-    leftToolbar->addTool("Transform", "Apply transformation", [this]() { applyRotation(); }, 0xf2f1);  // fa-rotate
-    leftToolbar->addSeparator();
-    
-    leftToolbar->addTool("Enhance", "Auto enhance image", [this]() { applyAutoEnhancement(); }, 0xf005);  // fa-star
-    leftToolbar->addTool("Denoise", "Remove noise", [this]() { applyNoiseRemoval(); }, 0xf130);  // fa-microphone
-    leftToolbar->addSeparator();
-    
-    leftToolbar->addTool("Filters", "Apply filters", [this]() { applyGaussianBlur(); }, 0xf0b0);  // fa-filter
-    leftToolbar->addTool("Edges", "Edge detection", [this]() { applyEdgeDetection(); }, 0xf0e7);  // fa-bolt
+    leftToolbar->addTool("Select", "Toggle selection mode (Ctrl+S)", [this]() { toggleSelectionMode(); }, 0xf246);  // fa-object-group
     
     mainLayout->addWidget(leftToolbar);
     
@@ -449,7 +518,20 @@ void MainWindow::applySimpleFilter(
 ) {
     if (!checkImageLoaded("apply filter")) return;
     
-    filterFunc(currentImage, processedImage);
+    // Apply filter to create processed result
+    cv::Mat tempProcessed;
+    filterFunc(currentImage, tempProcessed);
+    
+    // Apply selection mask if active
+    if (selectionTool->hasMask()) {
+        cv::Mat mask = selectionTool->getMask(cv::Size(currentImage.cols, currentImage.rows));
+        processedImage = selectionTool->applyMaskToResult(currentImage, tempProcessed);
+        updateStatus(successMessage + " (to selected area only)", "success");
+    } else {
+        processedImage = tempProcessed;
+        updateStatus(successMessage, "success");
+    }
+    
     recentlyProcessed = true;
     updateDisplay();
     
@@ -457,15 +539,14 @@ void MainWindow::applySimpleFilter(
         currentImage = processedImage.clone();
         rightSidebar->addLayer(layerName, layerType, processedImage, operationFunc);
         rightSidebar->updateHistogram(processedImage);
-        updateUndoButtonState();  // Update undo button state
+        updateUndoButtonState();
     }
-    
-    updateStatus(successMessage, "success");
 }
 
 void MainWindow::updateDisplay() {
     if (imageLoaded && !originalImage.empty()) {
         originalCanvas->setImage(originalImage);
+        
         QString info = QString("Size: %1 x %2 | Channels: %3")
                       .arg(originalImage.cols)
                       .arg(originalImage.rows)
@@ -474,7 +555,20 @@ void MainWindow::updateDisplay() {
     }
     
     if (recentlyProcessed && !processedImage.empty()) {
-        processedCanvas->setImage(processedImage);
+        // Show selection overlay on processed image if in selection mode
+        if (selectionMode) {
+            qDebug() << "Selection mode active, getting overlay. Has mask:" << selectionTool->hasMask();
+            cv::Mat overlay = selectionTool->getOverlay(processedImage);
+            if (!overlay.empty()) {
+                qDebug() << "Overlay created, size:" << overlay.cols << "x" << overlay.rows;
+                processedCanvas->setImage(overlay);
+            } else {
+                qDebug() << "Overlay is empty!";
+                processedCanvas->setImage(processedImage);
+            }
+        } else {
+            processedCanvas->setImage(processedImage);
+        }
         QString info = QString("Size: %1 x %2 | Channels: %3")
                       .arg(processedImage.cols)
                       .arg(processedImage.rows)
@@ -641,6 +735,202 @@ void MainWindow::showWaveletDialog() {
            updateDisplay();
        }
    }
+
+// ===== Image Restoration Functions =====
+
+void MainWindow::applyWienerRestoration() {
+    if (!checkImageLoaded("apply Wiener restoration")) return;
+    
+    // Create identity PSF (can be customized for known blur)
+    cv::Mat psf = cv::Mat::zeros(15, 15, CV_32F);
+    psf.at<float>(7, 7) = 1.0f;
+    
+    double noiseVariance = 0.01;
+    
+    ImageProcessor::applyWienerFilter(currentImage, processedImage, psf, noiseVariance);
+    recentlyProcessed = true;
+    
+    if (!processedImage.empty()) {
+        currentImage = processedImage.clone();
+        rightSidebar->addLayer("Wiener Restoration", "restoration", processedImage, nullptr);
+        rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();
+    }
+    
+    updateDisplay();
+    updateStatus("Wiener restoration applied successfully!", "success");
+}
+
+void MainWindow::applyMotionBlurRestoration() {
+    if (!checkImageLoaded("restore motion blur")) return;
+    
+    bool ok;
+    int length = QInputDialog::getInt(this, "Motion Blur Parameters", 
+                                      "Enter blur length (pixels):", 15, 5, 50, 1, &ok);
+    if (!ok) return;
+    
+    double angle = QInputDialog::getDouble(this, "Motion Blur Parameters",
+                                          "Enter blur angle (degrees):", 45, 0, 360, 1, &ok);
+    if (!ok) return;
+    
+    ImageProcessor::restoreMotionBlur(currentImage, processedImage, length, angle);
+    recentlyProcessed = true;
+    
+    if (!processedImage.empty()) {
+        currentImage = processedImage.clone();
+        rightSidebar->addLayer(
+            QString("Motion Blur Restoration (L=%1, A=%2)").arg(length).arg(angle),
+            "restoration", processedImage, nullptr);
+        rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();
+    }
+    
+    updateDisplay();
+    updateStatus("Motion blur restoration applied successfully!", "success");
+}
+
+void MainWindow::applyAtmosphericRestoration() {
+    if (!checkImageLoaded("restore atmospheric blur")) return;
+    
+    bool ok;
+    double k = QInputDialog::getDouble(this, "Atmospheric Restoration",
+                                       "Enter turbulence parameter (k):", 0.001, 0.0001, 0.01, 4, &ok);
+    if (!ok) return;
+    
+    ImageProcessor::restoreAtmosphericBlur(currentImage, processedImage, k);
+    recentlyProcessed = true;
+    
+    if (!processedImage.empty()) {
+        currentImage = processedImage.clone();
+        rightSidebar->addLayer(
+            QString("Atmospheric Restoration (k=%1)").arg(k),
+            "restoration", processedImage, nullptr);
+        rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();
+    }
+    
+    updateDisplay();
+    updateStatus("Atmospheric restoration applied successfully!", "success");
+}
+
+// ===== Distortion Correction Functions =====
+
+void MainWindow::correctBarrel() {
+    if (!checkImageLoaded("correct barrel distortion")) return;
+    
+    bool ok;
+    double k1 = QInputDialog::getDouble(this, "Barrel Distortion Correction",
+                                        "Enter k1 coefficient:", 0.2, -1.0, 1.0, 2, &ok);
+    if (!ok) return;
+    
+    double k2 = QInputDialog::getDouble(this, "Barrel Distortion Correction",
+                                        "Enter k2 coefficient:", 0.0, -1.0, 1.0, 2, &ok);
+    if (!ok) return;
+    
+    ImageProcessor::correctBarrelDistortion(currentImage, processedImage, k1, k2);
+    recentlyProcessed = true;
+    
+    if (!processedImage.empty()) {
+        currentImage = processedImage.clone();
+        rightSidebar->addLayer(
+            QString("Barrel Correction (k1=%1, k2=%2)").arg(k1).arg(k2),
+            "distortion", processedImage, nullptr);
+        rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();
+    }
+    
+    updateDisplay();
+    updateStatus("Barrel distortion corrected successfully!", "success");
+}
+
+void MainWindow::correctPincushion() {
+    if (!checkImageLoaded("correct pincushion distortion")) return;
+    
+    bool ok;
+    double k1 = QInputDialog::getDouble(this, "Pincushion Distortion Correction",
+                                        "Enter k1 coefficient:", -0.2, -1.0, 1.0, 2, &ok);
+    if (!ok) return;
+    
+    double k2 = QInputDialog::getDouble(this, "Pincushion Distortion Correction",
+                                        "Enter k2 coefficient:", 0.0, -1.0, 1.0, 2, &ok);
+    if (!ok) return;
+    
+    ImageProcessor::correctPincushionDistortion(currentImage, processedImage, k1, k2);
+    recentlyProcessed = true;
+    
+    if (!processedImage.empty()) {
+        currentImage = processedImage.clone();
+        rightSidebar->addLayer(
+            QString("Pincushion Correction (k1=%1, k2=%2)").arg(k1).arg(k2),
+            "distortion", processedImage, nullptr);
+        rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();
+    }
+    
+    updateDisplay();
+    updateStatus("Pincushion distortion corrected successfully!", "success");
+}
+
+void MainWindow::correctPerspective() {
+    if (!checkImageLoaded("correct perspective distortion")) return;
+    
+    QMessageBox::information(this, "Perspective Correction",
+        "Using default perspective correction.\n"
+        "This will correct mild perspective distortion.");
+    
+    // Use default rectangle for source (slightly distorted trapezoid)
+    std::vector<cv::Point2f> srcPoints = {
+        cv::Point2f(currentImage.cols * 0.2f, currentImage.rows * 0.2f),
+        cv::Point2f(currentImage.cols * 0.8f, currentImage.rows * 0.2f),
+        cv::Point2f(currentImage.cols * 0.85f, currentImage.rows * 0.85f),
+        cv::Point2f(currentImage.cols * 0.15f, currentImage.rows * 0.85f)
+    };
+    
+    // Destination points (perfect rectangle)
+    std::vector<cv::Point2f> dstPoints = {
+        cv::Point2f(0, 0),
+        cv::Point2f(currentImage.cols - 1, 0),
+        cv::Point2f(currentImage.cols - 1, currentImage.rows - 1),
+        cv::Point2f(0, currentImage.rows - 1)
+    };
+    
+    ImageProcessor::correctPerspectiveDistortion(currentImage, processedImage, srcPoints, dstPoints);
+    recentlyProcessed = true;
+    
+    if (!processedImage.empty()) {
+        currentImage = processedImage.clone();
+        rightSidebar->addLayer("Perspective Correction", "distortion", processedImage, nullptr);
+        rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();
+    }
+    
+    updateDisplay();
+    updateStatus("Perspective distortion corrected successfully!", "success");
+}
+
+void MainWindow::correctKeystone() {
+    if (!checkImageLoaded("correct keystone distortion")) return;
+    
+    bool ok;
+    double angle = QInputDialog::getDouble(this, "Keystone Correction",
+                                           "Enter keystone angle (degrees):", 15, -45, 45, 1, &ok);
+    if (!ok) return;
+    
+    ImageProcessor::correctKeystoneDistortion(currentImage, processedImage, angle);
+    recentlyProcessed = true;
+    
+    if (!processedImage.empty()) {
+        currentImage = processedImage.clone();
+        rightSidebar->addLayer(
+            QString("Keystone Correction (%1°)").arg(angle),
+            "distortion", processedImage, nullptr);
+        rightSidebar->updateHistogram(processedImage);
+        updateUndoButtonState();
+    }
+    
+    updateDisplay();
+    updateStatus("Keystone distortion corrected successfully!", "success");
+}
 
 void MainWindow::onLayersRemoveRequested(const QList<int>& layerIndices) {
     if (layerIndices.isEmpty()) return;
@@ -2116,6 +2406,279 @@ void MainWindow::onROIMouseRelease(const QPoint& pos) {
 }
 
 // ============================================================================
+// SELECTION TOOL FUNCTIONS
+// ============================================================================
+
+void MainWindow::toggleSelectionMode() {
+    qDebug() << "=== toggleSelectionMode called ===";
+    qDebug() << "imageLoaded:" << imageLoaded;
+    qDebug() << "recentlyProcessed:" << recentlyProcessed;
+    qDebug() << "processedImage empty:" << processedImage.empty();
+    if (!processedImage.empty()) {
+        qDebug() << "processedImage channels:" << processedImage.channels();
+        qDebug() << "processedImage size:" << processedImage.cols << "x" << processedImage.rows;
+    }
+    
+    // Check if we have a processed grayscale image
+    if (!selectionMode && (!recentlyProcessed || processedImage.empty())) {
+        qDebug() << "ERROR: No processed image!";
+        QMessageBox::information(this, "Selection Tool",
+            "Please process the image first (e.g., convert to grayscale).\n\n"
+            "Selection tool works on processed images only.");
+        return;
+    }
+    
+    if (!selectionMode && processedImage.channels() != 1) {
+        qDebug() << "ERROR: Not grayscale! Channels:" << processedImage.channels();
+        QMessageBox::information(this, "Selection Tool",
+            "Selection tool requires a grayscale image.\n\n"
+            "Please convert to grayscale first:\n"
+            "Color Processing → Grayscale Conversion");
+        return;
+    }
+    
+    qDebug() << "Checks passed, toggling selection mode...";
+    selectionMode = !selectionMode;
+    
+    if (selectionMode) {
+        // Disable other modes
+        if (cropMode) {
+            cropMode = false;
+            updateStatus("Crop mode disabled", "info");
+        }
+        if (roiMode) {
+            roiMode = false;
+            updateStatus("ROI mode disabled", "info");
+        }
+        
+        // Enable mouse events on processed canvas
+        processedCanvas->setMouseEventsEnabled(true);
+        
+        // Connect mouse events to selection handler on PROCESSED canvas
+        disconnect(processedCanvas, &ImageCanvas::mousePressed, nullptr, nullptr);
+        disconnect(processedCanvas, &ImageCanvas::mouseMoved, nullptr, nullptr);
+        disconnect(processedCanvas, &ImageCanvas::mouseReleased, nullptr, nullptr);
+        
+        connect(processedCanvas, &ImageCanvas::mousePressed, this, &MainWindow::onSelectionMousePress);
+        connect(processedCanvas, &ImageCanvas::mouseMoved, this, &MainWindow::onSelectionMouseMove);
+        connect(processedCanvas, &ImageCanvas::mouseReleased, this, &MainWindow::onSelectionMouseRelease);
+        
+        updateStatus(QString("Selection mode enabled - Method: %1")
+            .arg(selectionTool->getModeName()), "success");
+        
+        updateDisplay();
+    } else {
+        // Disable mouse events on processed canvas
+        processedCanvas->setMouseEventsEnabled(false);
+        
+        // Disconnect selection events from processed canvas
+        disconnect(processedCanvas, &ImageCanvas::mousePressed, this, &MainWindow::onSelectionMousePress);
+        disconnect(processedCanvas, &ImageCanvas::mouseMoved, this, &MainWindow::onSelectionMouseMove);
+        disconnect(processedCanvas, &ImageCanvas::mouseReleased, this, &MainWindow::onSelectionMouseRelease);
+        
+        updateStatus("Selection mode disabled", "info");
+        updateDisplay();
+    }
+}
+
+void MainWindow::setSelectionMethod(int method) {
+    selectionTool->clearMask();
+    
+    switch (method) {
+        case 0: selectionTool->setMode(SelectionMode::Rectangle); break;
+        case 1: selectionTool->setMode(SelectionMode::Polygon); break;
+        case 2: selectionTool->setMode(SelectionMode::MagicWand); break;
+        case 3: selectionTool->setMode(SelectionMode::Threshold); break;
+        case 4: selectionTool->setMode(SelectionMode::EdgeBased); break;
+    }
+    
+    if (!selectionMode) {
+        selectionMode = true;
+        toggleSelectionMode();
+    }
+    
+    updateStatus(QString("Selection method: %1").arg(selectionTool->getModeName()), "info");
+    updateDisplay();
+}
+
+void MainWindow::clearSelection() {
+    selectionTool->clearMask();
+    updateDisplay();
+    updateStatus("Selection cleared", "info");
+}
+
+void MainWindow::applyMagicWand() {
+    if (!imageLoaded) {
+        QMessageBox::information(this, "Magic Wand",
+            "Load an image first, then:\n"
+            "1. Enable Selection Mode (Ctrl+S)\n"
+            "2. Click on a color to select similar pixels\n"
+            "3. Apply any filter - it will affect only selected pixels!");
+        return;
+    }
+    
+    setSelectionMethod(2);
+    updateStatus("Magic Wand active - Click on image to select similar colors", "info");
+}
+
+void MainWindow::applyThresholdSelection() {
+    if (!checkImageLoaded("apply threshold selection")) return;
+    
+    bool ok;
+    int minThresh = QInputDialog::getInt(this, "Threshold Selection",
+        "Enter minimum intensity (0-255):", 100, 0, 255, 1, &ok);
+    if (!ok) return;
+    
+    int maxThresh = QInputDialog::getInt(this, "Threshold Selection",
+        "Enter maximum intensity (0-255):", 200, 0, 255, 1, &ok);
+    if (!ok) return;
+    
+    setSelectionMethod(3);
+    selectionTool->thresholdSelect(processedImage, minThresh, maxThresh);
+    
+    updateStatus(QString("Selected pixels in range [%1-%2]").arg(minThresh).arg(maxThresh), "success");
+}
+
+void MainWindow::saveSelectionAsLayer() {
+    if (!selectionTool->hasMask()) {
+        QMessageBox::information(this, "Save Selection",
+            "No active selection to save.\n\n"
+            "Create a selection first using one of the 5 selection methods.");
+        return;
+    }
+    
+    // Get selection as a visualized layer (green overlay)
+    cv::Mat selectionLayer = selectionTool->getMaskAsLayer();
+    
+    if (selectionLayer.empty()) {
+        updateStatus("Failed to create selection layer", "error");
+        return;
+    }
+    
+    // Get description
+    QString description = selectionTool->getSelectionDescription();
+    
+    // Add to layers
+    rightSidebar->addLayer(
+        QString("Selection: %1").arg(description),
+        "selection",
+        selectionLayer,
+        nullptr  // No operation function, just stores the mask
+    );
+    
+    updateStatus(QString("Selection saved as layer: %1").arg(description), "success");
+}
+
+void MainWindow::loadSelectionFromLayer(int layerIndex) {
+    if (!rightSidebar->hasLayers()) {
+        QMessageBox::information(this, "Load Selection",
+            "No layers available to load selection from.");
+        return;
+    }
+    
+    auto layers = rightSidebar->getLayers();
+    if (layerIndex < 0 || layerIndex >= layers.size()) {
+        updateStatus("Invalid layer index", "error");
+        return;
+    }
+    
+    const auto& layer = layers[layerIndex];
+    
+    // Load the layer as a selection mask
+    selectionTool->loadMaskFromLayer(layer.image);
+    
+    // Enable selection mode if not already enabled
+    if (!selectionMode) {
+        toggleSelectionMode();
+    }
+    
+    updateStatus(QString("Selection loaded from layer: %1").arg(layer.name), "success");
+    updateDisplay();
+}
+
+void MainWindow::onSelectionMousePress(const QPoint& pos) {
+    if (!selectionMode || !imageLoaded) return;
+    
+    qDebug() << "Selection mouse press at:" << pos << "Mode:" << (int)selectionTool->getMode();
+    
+    switch (selectionTool->getMode()) {
+        case SelectionMode::Rectangle:
+            selectionTool->startRectangle(pos);
+            qDebug() << "Rectangle selection started";
+            break;
+            
+        case SelectionMode::Polygon:
+            selectionTool->addPolygonPoint(pos);
+            qDebug() << "Polygon point added";
+            break;
+            
+        case SelectionMode::MagicWand: {
+            bool ok;
+            int tolerance = QInputDialog::getInt(this, "Magic Wand Tolerance",
+                "Enter color tolerance (0-255):", 30, 0, 255, 1, &ok);
+            if (ok) {
+                qDebug() << "Calling magicWandSelect with image size:" << processedImage.cols << "x" << processedImage.rows;
+                selectionTool->magicWandSelect(processedImage, pos, tolerance);
+                qDebug() << "Has mask after magic wand:" << selectionTool->hasMask();
+                updateStatus(QString("Magic wand selected at (%1, %2) with tolerance %3")
+                    .arg(pos.x()).arg(pos.y()).arg(tolerance), "success");
+            }
+            break;
+        }
+            
+        case SelectionMode::EdgeBased:
+            qDebug() << "Calling edgeBasedSelect";
+            selectionTool->edgeBasedSelect(processedImage, pos);
+            qDebug() << "Has mask after edge-based:" << selectionTool->hasMask();
+            updateStatus("Edge-based selection completed", "success");
+            break;
+            
+        default:
+            break;
+    }
+}
+
+void MainWindow::onSelectionMouseMove(const QPoint& pos) {
+    if (!selectionMode || !imageLoaded) return;
+    
+    if (selectionTool->getMode() == SelectionMode::Rectangle) {
+        selectionTool->updateRectangle(pos);
+        qDebug() << "Rectangle updated to:" << pos;
+    }
+}
+
+void MainWindow::onSelectionMouseRelease(const QPoint& pos) {
+    if (!selectionMode || !imageLoaded) return;
+    
+    qDebug() << "Selection mouse release at:" << pos;
+    
+    if (selectionTool->getMode() == SelectionMode::Rectangle) {
+        selectionTool->endRectangle(cv::Size(processedImage.cols, processedImage.rows));
+        qDebug() << "Rectangle ended. Has mask:" << selectionTool->hasMask();
+    } else if (selectionTool->getMode() == SelectionMode::Polygon) {
+        // Right click to close polygon
+        if (QApplication::mouseButtons() & Qt::RightButton) {
+            selectionTool->closePolygon(cv::Size(processedImage.cols, processedImage.rows));
+            qDebug() << "Polygon closed. Has mask:" << selectionTool->hasMask();
+        }
+    }
+}
+
+void MainWindow::onSelectionUpdated() {
+    if (!imageLoaded || !selectionMode) return;
+    updateDisplay();
+}
+
+void MainWindow::onSelectionCompleted() {
+    if (!imageLoaded || !selectionMode) return;
+    
+    QString modeName = selectionTool->getModeName();
+    updateStatus(QString("%1 selection completed! Apply filters to process selected area only.")
+        .arg(modeName), "success");
+    updateDisplay();
+}
+
+// ============================================================================
 // ZOOM AND VIEW CONTROLS
 // ============================================================================
 
@@ -2781,3 +3344,4 @@ void MainWindow::showFrequencyFilterDialog() {
         updateDisplay();
     }
 }
+#include "moc_MainWindow.cpp"

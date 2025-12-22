@@ -181,3 +181,4 @@ void ROIDialog::onExportCSVClicked() {
 void ROIDialog::onCloseClicked() {
     accept();
 }
+#include "moc_ROIDialog.cpp"

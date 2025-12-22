@@ -310,3 +310,4 @@ void AutoEnhanceDialog::onCancelClicked() {
     applied = false;
     reject();
 }
+#include "moc_AutoEnhanceDialog.cpp"

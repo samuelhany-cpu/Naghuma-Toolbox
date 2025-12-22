@@ -522,3 +522,4 @@ void NoiseRemovalDialog::onCancelClicked() {
     applied = false;
     reject();
 }
+#include "moc_NoiseRemovalDialog.cpp"

@@ -624,3 +624,4 @@ void SegmentationDialog::onResetClicked() {
     
     updatePreview();
 }
+#include "moc_SegmentationDialog.cpp"

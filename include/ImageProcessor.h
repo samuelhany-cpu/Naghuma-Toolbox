@@ -71,6 +71,39 @@ public:
     
     // Variable thresholding (dynamic threshold based on local statistics)
     static void applyVariableThreshold(const cv::Mat& src, cv::Mat& dst, double k = 0.5);
+    
+    // ========== IMAGE RESTORATION ==========
+    
+    // Wiener filter for restoration (deconvolution)
+    static void applyWienerFilter(const cv::Mat& src, cv::Mat& dst, const cv::Mat& psf, double noiseVariance = 0.01);
+    
+    // Constrained Least Squares (CLS) restoration
+    static void applyCLSRestoration(const cv::Mat& src, cv::Mat& dst, const cv::Mat& psf, double gamma = 0.1);
+    
+    // Inverse filtering
+    static void applyInverseFilter(const cv::Mat& src, cv::Mat& dst, const cv::Mat& psf, double epsilon = 0.001);
+    
+    // Motion blur restoration
+    static void restoreMotionBlur(const cv::Mat& src, cv::Mat& dst, int length, double angle);
+    
+    // Atmospheric turbulence restoration
+    static void restoreAtmosphericBlur(const cv::Mat& src, cv::Mat& dst, double k = 0.001);
+    
+    // ========== GEOMETRIC DISTORTION ==========
+    
+    // Barrel distortion correction
+    static void correctBarrelDistortion(const cv::Mat& src, cv::Mat& dst, double k1, double k2 = 0.0);
+    
+    // Pincushion distortion correction
+    static void correctPincushionDistortion(const cv::Mat& src, cv::Mat& dst, double k1, double k2 = 0.0);
+    
+    // Perspective distortion correction (parallel lines)
+    static void correctPerspectiveDistortion(const cv::Mat& src, cv::Mat& dst, 
+                                            const std::vector<cv::Point2f>& srcPoints,
+                                            const std::vector<cv::Point2f>& dstPoints);
+    
+    // Apply trapezoidal/keystone correction
+    static void correctKeystoneDistortion(const cv::Mat& src, cv::Mat& dst, double angle);
 };
 
 #endif // IMAGEPROCESSOR_H

@@ -240,3 +240,5 @@ void CollapsibleToolbar::updateButtonStyles() {
         }
     }
 }
+
+#include "moc_CollapsibleToolbar.cpp"

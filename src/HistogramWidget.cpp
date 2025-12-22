@@ -152,3 +152,5 @@ void HistogramWidget::clear() {
     sourceImage = cv::Mat();
     update();
 }
+
+#include "moc_HistogramWidget.cpp"

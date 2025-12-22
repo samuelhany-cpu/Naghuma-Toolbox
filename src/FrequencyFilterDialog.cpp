@@ -609,3 +609,4 @@ void FrequencyFilterDialog::onResetClicked() {
     
     updatePreview();
 }
+#include "moc_FrequencyFilterDialog.cpp"

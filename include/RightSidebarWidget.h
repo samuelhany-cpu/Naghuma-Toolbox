@@ -6,10 +6,11 @@
 #include <QListWidget>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <QVector>
 #include <opencv2/opencv.hpp>
+#include "LayerManager.h"
 
 class HistogramWidget;
-class LayerManager;
 
 class RightSidebarWidget : public QWidget {
     Q_OBJECT
@@ -25,6 +26,8 @@ public:
     void resetHistogram();
     void removeLayer(int layerIndex);
     int getLayerCount() const;
+    bool hasLayers() const;
+    const QVector<ProcessingLayer>& getLayers() const;
     cv::Mat getLayerImage(int layerIndex) const;
     cv::Mat rebuildImage(const cv::Mat& original, int upToLayer = -1) const;
 

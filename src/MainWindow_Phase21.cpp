@@ -1,6 +1,13 @@
 #include "MainWindow.h"
+// UI Component includes - MUST come first for complete type definitions
+#include "ImageCanvas.h"
+#include "RightSidebarWidget.h"
+
+// Phase 21 Dialog includes
 #include "IntensityTransformDialog.h"
 #include "SharpeningDialog.h"
+
+// Processing includes
 #include "ImageProcessor.h"
 
 // ============================================================================

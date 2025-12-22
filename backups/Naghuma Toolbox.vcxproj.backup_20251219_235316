@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <ProjectGuid>{E4A1F008-3C44-44BA-B5D4-46BC704BB57E}</ProjectGuid>
+    <RootNamespace>NaghumaToolbox</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)lib;F:\OpenCV\opencv\build\include;C:\Qt\6.7.3\msvc2019_64\include;C:\Qt\6.7.3\msvc2019_64\include\QtCore;C:\Qt\6.7.3\msvc2019_64\include\QtGui;C:\Qt\6.7.3\msvc2019_64\include\QtWidgets;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>F:\OpenCV\opencv\build\x64\vc15\lib;C:\Qt\6.7.3\msvc2019_64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opencv_world430d.lib;Qt6Cored.lib;Qt6Guid.lib;Qt6Widgetsd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="lib\color\ColorSpace.cpp" />
+    <ClCompile Include="src\ColorConversionDialog.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\MainWindow.cpp" />
+    <ClCompile Include="src\ImageCanvas.cpp" />
+    <ClCompile Include="src\ImageProcessor.cpp" />
+    <ClCompile Include="src\CropTool.cpp" />
+    <ClCompile Include="src\moc_CropTool.cpp" />
+    <ClCompile Include="src\CompressionDialog.cpp" />
+    <ClCompile Include="src\moc_CompressionDialog.cpp" />
+    <ClCompile Include="src\moc_SegmentationDialog.cpp" />
+        <ClCompile Include="src\FeatureDetectionDialog.cpp" />
+    <ClCompile Include="src\FrequencyFilterDialog.cpp" />
+    <ClCompile Include="src\moc_FeatureDetectionDialog.cpp" />
+    <ClCompile Include="src\FrequencyFilterDialog.cpp" />
+    <ClCompile Include="src\moc_FrequencyFilterDialog.cpp" />
+    <ClCompile Include="src\AutoEnhanceDialog.cpp" />
+    <ClCompile Include="src\moc_AutoEnhanceDialog.cpp" />
+    <ClCompile Include="src\NoiseRemovalDialog.cpp" />
+    <ClCompile Include="src\moc_NoiseRemovalDialog.cpp" />
+    <ClCompile Include="src\CollapsibleToolbar.cpp" />
+    <ClCompile Include="src\moc_CollapsibleToolbar.cpp" />
+    <ClCompile Include="src\qrc_icons.cpp" />
+    <ClCompile Include="src\ROIShape.cpp" />
+    <ClCompile Include="src\ROIManager.cpp" />
+    <ClCompile Include="src\moc_ROIManager.cpp" />
+    <ClCompile Include="src\ROIDialog.cpp" />
+    <ClCompile Include="src\moc_ROIDialog.cpp" />
+    <ClCompile Include="src\HistogramWidget.cpp" />
+    <ClCompile Include="src\SegmentationDialog.cpp" />
+    <ClCompile Include="src\ThresholdingDialog.cpp" />
+    <ClCompile Include="src\TransformDialog.cpp" />
+    <ClCompile Include="src\RightSidebarWidget.cpp" />
+    <ClCompile Include="src\LayerManager.cpp" />
+    <ClCompile Include="src\ImageMetrics.cpp" />
+    <ClCompile Include="src\AdjustmentDialog.cpp" />
+    <ClCompile Include="lib\filters\ImageFilters.cpp" />
+    <ClCompile Include="src\moc_MainWindow.cpp" />
+    <ClCompile Include="src\moc_ImageCanvas.cpp" />
+    <ClCompile Include="src\moc_HistogramWidget.cpp" />
+    <ClCompile Include="src\moc_TransformDialog.cpp" />
+    <ClCompile Include="src\moc_RightSidebarWidget.cpp" />
+    <ClCompile Include="src\moc_LayerManager.cpp" />
+    <ClCompile Include="src\moc_AdjustmentDialog.cpp" />
+    <ClCompile Include="src\qrc_fonts.cpp" />
+    <ClCompile Include="src\FontAwesomeIcon.cpp" />
+    <ClCompile Include="lib\color\ColorProcessor.cpp" />
+    <ClCompile Include="src\ColorProcessingDialog.cpp" />
+    <ClCompile Include="src\moc_ColorProcessingDialog.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\ColorConversionDialog.h" />
+    <ClInclude Include="include\ColorProcessingDialog.h" />
+    <ClInclude Include="include\MainWindow.h" />
+    <ClInclude Include="include\ImageCanvas.h" />
+    <ClInclude Include="include\ImageProcessor.h" />
+    <ClInclude Include="include\CropTool.h" />
+    <ClInclude Include="include\CompressionDialog.h" />
+    <ClInclude Include="include\AutoEnhanceDialog.h" />
+    <ClInclude Include="include\NoiseRemovalDialog.h" />
+    <ClInclude Include="include\CollapsibleToolbar.h" />
+    <ClInclude Include="include\ROIShape.h" />
+    <ClInclude Include="include\ROIManager.h" />
+    <ClInclude Include="include\ROIDialog.h" />
+    <ClInclude Include="include\HistogramWidget.h" />
+    <ClInclude Include="include\SegmentationDialog.h" />
+    <ClInclude Include="include\FeatureDetectionDialog.h" />
+    <ClInclude Include="include\FrequencyFilterDialog.h" />
+    <ClInclude Include="include\ThresholdingDialog.h" />
+    <ClInclude Include="include\TransformDialog.h" />
+    <ClInclude Include="include\RightSidebarWidget.h" />
+    <ClInclude Include="include\LayerManager.h" />
+    <ClInclude Include="include\ImageMetrics.h" />
+    <ClInclude Include="include\AdjustmentDialog.h" />
+    <ClInclude Include="include\filters\ImageFilters.h" />
+    <ClInclude Include="include\FontAwesomeIcon.h" />
+    <ClInclude Include="lib\color\ColorSpace.h" />
+    <ClInclude Include="lib\color\ColorProcessor.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="apply_phase13_edge_detectors.ps1" />
+    <None Include="BUILD_SUCCESS_SUMMARY.ps1" />
+    <None Include="build_with_moc.ps1" />
+    <None Include="complete_fix.ps1" />
+    <None Include="CONSOLE_WARNINGS_FIX.md" />
+    <None Include="create_working_moc.ps1" />
+    <None Include="docs\Phase17_Quick_Reference.md" />
+    <None Include="docs\Phase17_Testing_Guide.md" />
+    <None Include="final_moc_build.ps1" />
+    <None Include="FONT_AWESOME_SUCCESS.md" />
+    <None Include="generate_moc.ps1" />
+    <None Include="generate_moc_proper.ps1" />
+    <None Include="gen_threshold_moc.ps1" />
+    <None Include="ICON_SYSTEM_FINAL.md" />
+    <None Include="PHASE11_ZOOM_PAN_COMPLETE.md" />
+    <None Include="PHASE11_ZOOM_PAN_PLAN.md" />
+    <None Include="PHASE12_ROI_COMPLETE.md" />
+    <None Include="PHASE12_SUCCESS_REPORT.md" />
+    <None Include="PHASE13_EDGE_DETECTORS_COMPLETE.md" />
+    <None Include="PHASE13_QUICK_START.md" />
+    <None Include="PHASE8_AUTO_ENHANCE_COMPLETE.md" />
+    <None Include="PHASE8_GITHUB_UPLOAD.md" />
+    <None Include="PHASE9_NOISE_REMOVAL_COMPLETE.md" />
+    <None Include="PROJECT_COMPLETE.md" />
+    <None Include="QUICK_FIX.md" />
+    <None Include="README.md" />
+    <None Include="regenerate_moc_and_build.ps1" />
+    <None Include="scripts\add_new_files.ps1" />
+    <None Include="update_project_threshold.ps1" />
+    <None Include="use_qt_moc.ps1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="FIX_DRAWING_CRASH.txt" />
+    <Text Include="phase13_functions.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

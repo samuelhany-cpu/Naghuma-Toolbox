@@ -73,3 +73,5 @@ cv::Mat LayerManager::rebuildFromLayers(const cv::Mat& original, int upToLayer) 
     
     return result;
 }
+
+#include "moc_LayerManager.cpp"

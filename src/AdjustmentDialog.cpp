@@ -155,3 +155,4 @@ void AdjustmentDialog::updatePreview() {
 void AdjustmentDialog::applyAdjustments() {
     ImageProcessor::adjustBrightnessContrast(sourceImage, adjustedImage, brightness, contrast);
 }
+#include "moc_AdjustmentDialog.cpp"

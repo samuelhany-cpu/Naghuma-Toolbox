@@ -192,3 +192,5 @@ cv::Mat CropTool::getPreview(const cv::Mat& baseImage) const {
     
     return overlay;
 }
+
+#include "moc_CropTool.cpp"

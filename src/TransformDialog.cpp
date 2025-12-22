@@ -293,3 +293,4 @@ void SkewDialog::updatePreview() {
     ImageProcessor::applySkew(sourceImage, preview, skewX, skewY);
     emitPreview(preview);
 }
+#include "moc_TransformDialog.cpp"
