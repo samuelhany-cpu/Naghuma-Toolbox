@@ -55,88 +55,158 @@ OCRDialog::~OCRDialog() {
 
 void OCRDialog::setupUI() {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
-    mainLayout->setSpacing(10);
+    mainLayout->setSpacing(18);
+    mainLayout->setContentsMargins(25, 25, 25, 25);
     
     // Title
-    QLabel* titleLabel = new QLabel("Optical Character Recognition");
+    QLabel* titleLabel = new QLabel("🔍 Optical Character Recognition (OCR)");
     titleLabel->setStyleSheet(QString(
-        "font-size: 18pt; font-weight: bold; color: %1; padding: 10px;")
+        "font-size: 16pt; font-weight: bold; color: %1; padding-bottom: 5px;")
         .arg(primaryColor));
     mainLayout->addWidget(titleLabel);
     
+    QLabel* subtitleLabel = new QLabel("Extract text from images using advanced recognition");
+    subtitleLabel->setStyleSheet(QString("font-size: 10pt; color: %1; margin-bottom: 10px;").arg(secondaryColor));
+    mainLayout->addWidget(subtitleLabel);
+    
     // Main content area
     QHBoxLayout* contentLayout = new QHBoxLayout();
-    contentLayout->setSpacing(15);
+    contentLayout->setSpacing(20);
     
     // Left side - Preview and controls
     QVBoxLayout* leftLayout = new QVBoxLayout();
+    leftLayout->setSpacing(15);
     
     // Preview
-    QLabel* previewTitle = new QLabel("Image Preview");
-    previewTitle->setStyleSheet(QString("color: %1; font-weight: bold;").arg(secondaryColor));
+    QLabel* previewTitle = new QLabel("🖼️ Image Preview");
+    previewTitle->setStyleSheet(QString("color: %1; font-weight: bold; font-size: 11pt;").arg(secondaryColor));
     leftLayout->addWidget(previewTitle);
     
     previewLabel = new QLabel();
-    previewLabel->setMinimumSize(400, 300);
-    previewLabel->setMaximumSize(500, 400);
+    previewLabel->setMinimumSize(420, 320);
+    previewLabel->setMaximumSize(550, 420);
     previewLabel->setScaledContents(true);
     previewLabel->setStyleSheet(QString(
-        "border: 2px solid %1; border-radius: 8px; background-color: %2; padding: 5px;")
+        "border: 2px solid %1; border-radius: 8px; background-color: %2; padding: 8px;")
         .arg(primaryColor, panelColor));
     leftLayout->addWidget(previewLabel);
     
     // Preprocessing controls
-    QGroupBox* preprocessGroup = new QGroupBox("Preprocessing Options");
+    QGroupBox* preprocessGroup = new QGroupBox("⚙️ Preprocessing Options");
     preprocessGroup->setStyleSheet(QString(
-        "QGroupBox { color: %1; font-weight: bold; border: 2px solid %2; "
-        "border-radius: 8px; margin-top: 10px; padding: 15px; "
-        "background-color: %3; }"
-        "QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 5px; }")
+        "QGroupBox { color: %1; font-weight: bold; font-size: 11pt; border: 2px solid %2; "
+        "border-radius: 8px; margin-top: 12px; padding: 15px; "
+        "background-color: %3; padding-top: 20px; }"
+        "QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 8px; }")
         .arg(secondaryColor, primaryColor, panelColor));
     
     QVBoxLayout* preprocessLayout = new QVBoxLayout(preprocessGroup);
+    preprocessLayout->setSpacing(10);
+    preprocessLayout->setContentsMargins(12, 15, 12, 12);
     
-    grayscaleCheck = new QCheckBox("Convert to Grayscale");
+    grayscaleCheck = new QCheckBox("🔲 Convert to Grayscale");
     grayscaleCheck->setChecked(true);
-    grayscaleCheck->setStyleSheet(QString("color: %1;").arg(secondaryColor));
+    grayscaleCheck->setStyleSheet(QString("color: %1; font-size: 10pt; padding: 6px;").arg(secondaryColor));
     connect(grayscaleCheck, &QCheckBox::toggled, this, &OCRDialog::onPreprocessChanged);
     preprocessLayout->addWidget(grayscaleCheck);
     
-    thresholdCheck = new QCheckBox("Apply Adaptive Threshold");
+    thresholdCheck = new QCheckBox("🎯 Apply Adaptive Threshold");
     thresholdCheck->setChecked(true);
-    thresholdCheck->setStyleSheet(QString("color: %1;").arg(secondaryColor));
+    thresholdCheck->setStyleSheet(QString("color: %1; font-size: 10pt; padding: 6px;").arg(secondaryColor));
     connect(thresholdCheck, &QCheckBox::toggled, this, &OCRDialog::onPreprocessChanged);
     preprocessLayout->addWidget(thresholdCheck);
     
-    denoiseCheck = new QCheckBox("Denoise Image");
+    denoiseCheck = new QCheckBox("✨ Denoise Image");
     denoiseCheck->setChecked(true);
-    denoiseCheck->setStyleSheet(QString("color: %1;").arg(secondaryColor));
+    denoiseCheck->setStyleSheet(QString("color: %1; font-size: 10pt; padding: 6px;").arg(secondaryColor));
     connect(denoiseCheck, &QCheckBox::toggled, this, &OCRDialog::onPreprocessChanged);
     preprocessLayout->addWidget(denoiseCheck);
     
-    contrastCheck = new QCheckBox("Enhance Contrast (CLAHE)");
+    contrastCheck = new QCheckBox("🔆 Enhance Contrast (CLAHE)");
     contrastCheck->setChecked(true);
-    contrastCheck->setStyleSheet(QString("color: %1;").arg(secondaryColor));
+    contrastCheck->setStyleSheet(QString("color: %1; font-size: 10pt; padding: 6px;").arg(secondaryColor));
     connect(contrastCheck, &QCheckBox::toggled, this, &OCRDialog::onPreprocessChanged);
     preprocessLayout->addWidget(contrastCheck);
     
     leftLayout->addWidget(preprocessGroup);
+    
+    // Language selection
+    QGroupBox* languageGroup = new QGroupBox("🌍 Language Selection");
+    languageGroup->setStyleSheet(QString(
+        "QGroupBox { color: %1; font-weight: bold; font-size: 11pt; border: 2px solid %2; "
+        "border-radius: 8px; margin-top: 12px; padding: 15px; "
+        "background-color: %3; padding-top: 20px; }"
+        "QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 8px; }")
+        .arg(secondaryColor, primaryColor, panelColor));
+    
+    QVBoxLayout* languageLayout = new QVBoxLayout(languageGroup);
+    languageLayout->setSpacing(10);
+    languageLayout->setContentsMargins(12, 15, 12, 12);
+    
+    QLabel* languageLabel = new QLabel("Select text language:");
+    languageLabel->setStyleSheet(QString("color: %1; font-size: 10pt; padding: 4px;").arg(secondaryColor));
+    languageLayout->addWidget(languageLabel);
+    
+    languageCombo = new QComboBox();
+    languageCombo->addItem("🇬🇧 English", "eng");
+    languageCombo->addItem("🇸🇦 Arabic (العربية)", "ara");
+    languageCombo->addItem("🌐 English + Arabic", "eng+ara");
+    languageCombo->setCurrentIndex(0);
+    languageCombo->setStyleSheet(QString(
+        "QComboBox { "
+        "    background: %1; "
+        "    color: %2; "
+        "    border: 2px solid %3; "
+        "    border-radius: 6px; "
+        "    padding: 8px 12px; "
+        "    font-size: 12pt; "
+        "    font-weight: 500; "
+        "} "
+        "QComboBox:hover { "
+        "    border-color: %4; "
+        "    background: %5; "
+        "} "
+        "QComboBox::drop-down { "
+        "    border: none; "
+        "    width: 30px; "
+        "} "
+        "QComboBox::down-arrow { "
+        "    image: none; "
+        "    border-left: 5px solid transparent; "
+        "    border-right: 5px solid transparent; "
+        "    border-top: 6px solid %2; "
+        "    margin-right: 8px; "
+        "} "
+        "QComboBox QAbstractItemView { "
+        "    background: %1; "
+        "    color: %2; "
+        "    border: 2px solid %3; "
+        "    border-radius: 6px; "
+        "    padding: 5px; "
+        "    selection-background-color: %3; "
+        "    selection-color: %4; "
+        "}")
+        .arg(panelColor, secondaryColor, primaryColor, primaryColor, hoverColor));
+    languageLayout->addWidget(languageCombo);
+    
+    leftLayout->addWidget(languageGroup);
     leftLayout->addStretch();
     
     contentLayout->addLayout(leftLayout);
     
     // Right side - Results
     QVBoxLayout* rightLayout = new QVBoxLayout();
+    rightLayout->setSpacing(12);
     
     // Results title and confidence
     QHBoxLayout* resultsHeaderLayout = new QHBoxLayout();
-    QLabel* resultsTitle = new QLabel("Recognition Results");
-    resultsTitle->setStyleSheet(QString("color: %1; font-weight: bold;").arg(secondaryColor));
+    QLabel* resultsTitle = new QLabel("📝 Recognition Results");
+    resultsTitle->setStyleSheet(QString("color: %1; font-weight: bold; font-size: 11pt;").arg(secondaryColor));
     resultsHeaderLayout->addWidget(resultsTitle);
     resultsHeaderLayout->addStretch();
     
     confidenceLabel = new QLabel("Confidence: 0%");
-    confidenceLabel->setStyleSheet(QString("color: %1; font-weight: bold;").arg(primaryColor));
+    confidenceLabel->setStyleSheet(QString("color: %1; font-weight: bold; font-size: 10pt;").arg(primaryColor));
     resultsHeaderLayout->addWidget(confidenceLabel);
     
     rightLayout->addLayout(resultsHeaderLayout);
@@ -156,16 +226,17 @@ void OCRDialog::setupUI() {
     // Results text
     resultText = new QTextEdit();
     resultText->setReadOnly(true);
-    resultText->setPlaceholderText("Recognized text will appear here...");
+    resultText->setPlaceholderText("🔍 Recognized text will appear here after clicking 'Recognize Text'...");
     resultText->setStyleSheet(QString(
-        "border: 2px solid %1; border-radius: 8px; background-color: %2; "
-        "color: %3; padding: 10px; font-family: 'Courier New', monospace; font-size: 11pt;")
+        "QTextEdit { border: 2px solid %1; border-radius: 8px; background-color: %2; "
+        "color: %3; padding: 12px; font-family: 'Consolas', 'Courier New', monospace; font-size: 11pt; line-height: 1.5; }")
         .arg(primaryColor, panelColor, secondaryColor));
+    resultText->setMinimumHeight(300);
     rightLayout->addWidget(resultText);
     
     // Status label
-    statusLabel = new QLabel("Ready to recognize text");
-    statusLabel->setStyleSheet(QString("color: %1; font-style: italic; padding: 5px;").arg(secondaryColor));
+    statusLabel = new QLabel("✅ Ready to recognize text");
+    statusLabel->setStyleSheet(QString("color: %1; font-style: italic; padding: 8px; font-size: 10pt;").arg(secondaryColor));
     rightLayout->addWidget(statusLabel);
     
     contentLayout->addLayout(rightLayout);
@@ -173,63 +244,65 @@ void OCRDialog::setupUI() {
     
     // Buttons
     QHBoxLayout* buttonLayout = new QHBoxLayout();
+    buttonLayout->setSpacing(12);
+    buttonLayout->setContentsMargins(0, 15, 0, 0);
     buttonLayout->addStretch();
     
-    recognizeButton = new QPushButton("Recognize Text");
-    recognizeButton->setMinimumWidth(150);
+    recognizeButton = new QPushButton("🔍 Recognize Text");
+    recognizeButton->setMinimumSize(160, 42);
     recognizeButton->setStyleSheet(QString(
         "QPushButton { background: qlineargradient(x1:0, y1:0, x2:1, y2:0, "
-        "stop:0 %1, stop:1 #c026d3); color: white; border: none; "
-        "border-radius: 6px; padding: 10px 20px; font-weight: bold; }"
+        "stop:0 %1, stop:1 #7AA2F7); color: white; border: none; "
+        "border-radius: 6px; padding: 12px 24px; font-weight: bold; font-size: 11pt; }"
         "QPushButton:hover { background: qlineargradient(x1:0, y1:0, x2:1, y2:0, "
-        "stop:0 #f0abfc, stop:1 %1); }"
-        "QPushButton:pressed { background: #a855f7; }")
+        "stop:0 #A5C4FF, stop:1 %1); }"
+        "QPushButton:pressed { background: #6A9FE8; }")
         .arg(primaryColor));
     connect(recognizeButton, &QPushButton::clicked, this, &OCRDialog::onRecognizeClicked);
     buttonLayout->addWidget(recognizeButton);
     
-    copyButton = new QPushButton("Copy Text");
-    copyButton->setMinimumWidth(120);
+    copyButton = new QPushButton("📋 Copy");
+    copyButton->setMinimumSize(100, 38);
     copyButton->setEnabled(false);
     copyButton->setStyleSheet(QString(
         "QPushButton { background-color: %1; color: %2; border: 2px solid %3; "
-        "border-radius: 6px; padding: 8px 16px; }"
-        "QPushButton:hover { background-color: %3; }"
-        "QPushButton:disabled { opacity: 0.5; }")
-        .arg(panelColor, secondaryColor, primaryColor));
+        "border-radius: 6px; padding: 10px 18px; font-size: 10pt; }"
+        "QPushButton:hover { background-color: %4; border-color: %3; }"
+        "QPushButton:disabled { opacity: 0.4; }")
+        .arg(panelColor, secondaryColor, primaryColor, hoverColor));
     connect(copyButton, &QPushButton::clicked, this, &OCRDialog::onCopyTextClicked);
     buttonLayout->addWidget(copyButton);
     
-    saveButton = new QPushButton("Save Text");
-    saveButton->setMinimumWidth(120);
+    saveButton = new QPushButton("💾 Save");
+    saveButton->setMinimumSize(100, 38);
     saveButton->setEnabled(false);
     saveButton->setStyleSheet(QString(
         "QPushButton { background-color: %1; color: %2; border: 2px solid %3; "
-        "border-radius: 6px; padding: 8px 16px; }"
-        "QPushButton:hover { background-color: %3; }"
-        "QPushButton:disabled { opacity: 0.5; }")
-        .arg(panelColor, secondaryColor, primaryColor));
+        "border-radius: 6px; padding: 10px 18px; font-size: 10pt; }"
+        "QPushButton:hover { background-color: %4; border-color: %3; }"
+        "QPushButton:disabled { opacity: 0.4; }")
+        .arg(panelColor, secondaryColor, primaryColor, hoverColor));
     connect(saveButton, &QPushButton::clicked, this, &OCRDialog::onSaveTextClicked);
     buttonLayout->addWidget(saveButton);
     
-    exportButton = new QPushButton("Export with Boxes");
-    exportButton->setMinimumWidth(150);
+    exportButton = new QPushButton("🗄️ Export+Boxes");
+    exportButton->setMinimumSize(130, 38);
     exportButton->setEnabled(false);
     exportButton->setStyleSheet(QString(
         "QPushButton { background-color: %1; color: %2; border: 2px solid %3; "
-        "border-radius: 6px; padding: 8px 16px; }"
-        "QPushButton:hover { background-color: %3; }"
-        "QPushButton:disabled { opacity: 0.5; }")
-        .arg(panelColor, secondaryColor, primaryColor));
+        "border-radius: 6px; padding: 10px 18px; font-size: 10pt; }"
+        "QPushButton:hover { background-color: %4; border-color: %3; }"
+        "QPushButton:disabled { opacity: 0.4; }")
+        .arg(panelColor, secondaryColor, primaryColor, hoverColor));
     connect(exportButton, &QPushButton::clicked, this, &OCRDialog::onExportWithBoxesClicked);
     buttonLayout->addWidget(exportButton);
     
-    closeButton = new QPushButton("Close");
-    closeButton->setMinimumWidth(100);
+    closeButton = new QPushButton("✕ Close");
+    closeButton->setMinimumSize(100, 38);
     closeButton->setStyleSheet(QString(
-        "QPushButton { background-color: %1; color: %2; border: 2px solid %2; "
-        "border-radius: 6px; padding: 8px 16px; }"
-        "QPushButton:hover { background-color: #3a3448; }")
+        "QPushButton { background-color: %1; color: %2; border: 2px solid #6C7086; "
+        "border-radius: 6px; padding: 10px 18px; font-size: 10pt; }"
+        "QPushButton:hover { background: #585B70; }")
         .arg(panelColor, secondaryColor));
     connect(closeButton, &QPushButton::clicked, this, &QDialog::reject);
     buttonLayout->addWidget(closeButton);
@@ -308,6 +381,13 @@ void OCRDialog::onRecognizeClicked() {
     options.denoiseImage = denoiseCheck->isChecked();
     options.enhanceContrast = contrastCheck->isChecked();
     
+    // Get selected language
+    QString selectedLang = languageCombo->currentData().toString();
+    std::string lang = selectedLang.toStdString();
+    
+    // Update OCR engine language
+    ocrEngine.initialize("", lang);
+    
     // Perform OCR
     lastResult = ocrEngine.recognizeText(originalImage, options);
     
@@ -315,11 +395,11 @@ void OCRDialog::onRecognizeClicked() {
         displayResults(lastResult);
         statusLabel->setText(QString("Recognition complete! Found %1 words.")
             .arg(lastResult.words.size()));
-        statusLabel->setStyleSheet(QString("color: #10b981; font-style: italic;"));
+        statusLabel->setStyleSheet(QString("color: %1; font-style: italic;").arg(accentSuccess));
     } else {
         statusLabel->setText(QString("Recognition failed: %1")
             .arg(QString::fromStdString(lastResult.errorMessage)));
-        statusLabel->setStyleSheet(QString("color: #ef4444; font-style: italic;"));
+        statusLabel->setStyleSheet(QString("color: %1; font-style: italic;").arg(accentDanger));
         QMessageBox::warning(this, "OCR Failed", 
             QString("Failed to recognize text:\n%1")
             .arg(QString::fromStdString(lastResult.errorMessage)));
@@ -351,7 +431,7 @@ void OCRDialog::onCopyTextClicked() {
     clipboard->setText(recognizedText);
     
     statusLabel->setText("Text copied to clipboard!");
-    statusLabel->setStyleSheet(QString("color: #10b981; font-style: italic;"));
+    statusLabel->setStyleSheet(QString("color: %1; font-style: italic;").arg(accentSuccess));
 }
 
 void OCRDialog::onSaveTextClicked() {
@@ -367,7 +447,7 @@ void OCRDialog::onSaveTextClicked() {
         file.close();
         
         statusLabel->setText(QString("Text saved to %1").arg(filename));
-        statusLabel->setStyleSheet(QString("color: #10b981; font-style: italic;"));
+        statusLabel->setStyleSheet(QString("color: %1; font-style: italic;").arg(accentSuccess));
     } else {
         QMessageBox::warning(this, "Save Failed", "Could not save file.");
     }
@@ -386,7 +466,7 @@ void OCRDialog::onExportWithBoxesClicked() {
     // Save image
     if (cv::imwrite(filename.toStdString(), outputImage)) {
         statusLabel->setText(QString("Image exported to %1").arg(filename));
-        statusLabel->setStyleSheet(QString("color: #10b981; font-style: italic;"));
+        statusLabel->setStyleSheet(QString("color: %1; font-style: italic;").arg(accentSuccess));
     } else {
         QMessageBox::warning(this, "Export Failed", "Could not save image.");
     }

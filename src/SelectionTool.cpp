@@ -378,10 +378,18 @@ cv::Mat SelectionTool::getOverlay(const cv::Mat& image) const {
         
         case SelectionMode::Polygon: {
             if (polygonPoints.size() > 1) {
+                // Draw lines between consecutive points
                 for (size_t i = 0; i < polygonPoints.size() - 1; i++) {
                     cv::line(overlay, 
                            cv::Point(polygonPoints[i].x(), polygonPoints[i].y()),
                            cv::Point(polygonPoints[i+1].x(), polygonPoints[i+1].y()),
+                           cv::Scalar(0, 255, 0), 2);
+                }
+                // Draw closing line from last point back to first point
+                if (polygonPoints.size() >= 3) {
+                    cv::line(overlay,
+                           cv::Point(polygonPoints.back().x(), polygonPoints.back().y()),
+                           cv::Point(polygonPoints.front().x(), polygonPoints.front().y()),
                            cv::Scalar(0, 255, 0), 2);
                 }
                 // Draw points

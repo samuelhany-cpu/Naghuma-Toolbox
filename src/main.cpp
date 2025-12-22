@@ -8,9 +8,9 @@ int main(int argc, char *argv[]) {
     qputenv("QT_LOGGING_RULES", "qt.qpa.*.warning=false");
     
     // Set application metadata
-    QApplication::setApplicationName("Naghuma Toolbox");
+    QApplication::setApplicationName("Naghumaaz Toolbox");
     QApplication::setApplicationVersion("1.0");
-    QApplication::setOrganizationName("Naghuma");
+    QApplication::setOrganizationName("Naghumaaz");
     
     // Create and show main window
     MainWindow window;

@@ -48,6 +48,7 @@ private slots:
     void applyRotation();
     void applySkew();
     void applyZoom();
+    void showResolutionEnhancementDialog();
     void applyFlipX();
     void applyFlipY();
     void applyFlipXY();

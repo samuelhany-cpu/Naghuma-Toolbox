@@ -52,11 +52,13 @@
     <ClCompile Include="lib\transforms\ImageTransforms.cpp" />
     <ClCompile Include="src\AdjustmentDialog.cpp" />
     <ClCompile Include="src\AutoEnhanceDialog.cpp" />
+    <ClCompile Include="src\BlurDialog.cpp" />
     <ClCompile Include="src\CollapsibleToolbar.cpp" />
     <ClCompile Include="src\ColorConversionDialog.cpp" />
     <ClCompile Include="src\ColorProcessingDialog.cpp" />
     <ClCompile Include="src\CompressionDialog.cpp" />
     <ClCompile Include="src\CropTool.cpp" />
+    <ClCompile Include="src\ResolutionEnhancementDialog.cpp" />
     <ClCompile Include="src\SelectionTool.cpp" />
     <ClCompile Include="src\FeatureDetectionDialog.cpp" />
     <ClCompile Include="src\FontAwesomeIcon.cpp" />
@@ -76,7 +78,9 @@
     <ClCompile Include="src\MainWindow_Phase23_OCR.cpp" />
     <ClCompile Include="src\NoiseRemovalDialog.cpp" />
     <ClCompile Include="src\OCRDialog.cpp" />
+    <ClCompile Include="src\moc_BlurDialog.cpp" />
     <ClCompile Include="src\moc_OCRDialog.cpp" />
+    <ClCompile Include="src\moc_ResolutionEnhancementDialog.cpp" />
     <ClCompile Include="src\moc_SelectionTool.cpp" />
     <ClCompile Include="src\qrc_fonts.cpp" />
     <ClCompile Include="src\qrc_icons.cpp" />
@@ -94,12 +98,14 @@
   <ItemGroup>
     <ClInclude Include="include\AdjustmentDialog.h" />
     <ClInclude Include="include\AutoEnhanceDialog.h" />
+    <ClInclude Include="include\BlurDialog.h" />
     <ClInclude Include="include\CannyDialog.h" />
     <ClInclude Include="include\CollapsibleToolbar.h" />
     <ClInclude Include="include\ColorConversionDialog.h" />
     <ClInclude Include="include\ColorProcessingDialog.h" />
     <ClInclude Include="include\CompressionDialog.h" />
     <ClInclude Include="include\CropTool.h" />
+    <ClInclude Include="include\ResolutionEnhancementDialog.h" />
     <ClInclude Include="include\SelectionTool.h" />
     <ClInclude Include="include\FeatureDetectionDialog.h" />
     <ClInclude Include="include\FontAwesomeIcon.h" />

@@ -78,14 +78,20 @@ private:
     QCheckBox* denoiseCheck;
     QCheckBox* contrastCheck;
     
+    // Language selection
+    QComboBox* languageCombo;
+    
     // Status
     QLabel* statusLabel;
     
-    // Theme colors
-    const QString primaryColor = "#e879f9";
-    const QString secondaryColor = "#c4b5fd";
-    const QString backgroundColor = "#1e1b29";
-    const QString panelColor = "#2a2438";
+    // Theme colors (Catppuccin-inspired dark theme)
+    const QString primaryColor = "#89B4FA";      // Soft blue
+    const QString secondaryColor = "#CDD6F4";    // Light text
+    const QString accentSuccess = "#A6E3A1";     // Mint green
+    const QString accentDanger = "#F38BA8";      // Coral red
+    const QString backgroundColor = "#1E1E2E";   // Deep dark
+    const QString panelColor = "#2A2A3E";        // Panel background
+    const QString hoverColor = "#363651";        // Hover state
 };
 
 #endif // OCRDIALOG_H

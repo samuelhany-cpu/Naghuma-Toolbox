@@ -8,6 +8,8 @@
 #include "AdjustmentDialog.h"
 #include "CropTool.h"
 #include "SelectionTool.h"
+#include "BlurDialog.h"
+#include "ResolutionEnhancementDialog.h"
 #include "CompressionDialog.h"
 #include "AutoEnhanceDialog.h"
 #include "NoiseRemovalDialog.h"
@@ -45,6 +47,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), imageLoaded(false), recentlyProcessed(false), cropMode(false), selectionMode(false) {
     
     setWindowTitle("Naghuma Toolbox - Image Processing Suite");
+    setWindowTitle("Welcome to Naghumaaz Studio");
     setMinimumSize(1600, 900);
     
     // Initialize crop tool
@@ -131,6 +134,7 @@ void MainWindow::createMenuBar() {
     ADD_MENU_ACTION(transformMenu, "Rotate", applyRotation);
     ADD_MENU_ACTION(transformMenu, "Skew (Shear)", applySkew);
     ADD_MENU_ACTION(transformMenu, "Scale (Resize)", applyZoom);
+    ADD_MENU_ACTION(transformMenu, "Enhance Resolution (Upscale)...", showResolutionEnhancementDialog);
     transformMenu->addSeparator();
     ADD_MENU_ACTION(transformMenu, "Flip Horizontally", applyFlipX);
     ADD_MENU_ACTION(transformMenu, "Flip Vertically", applyFlipY);
@@ -1096,6 +1100,12 @@ void MainWindow::undoLastOperation() {
         return;
     }
     
+    // Clear any active selection to prevent color inversion bug
+    if (selectionTool->hasMask()) {
+        selectionTool->clearMask();
+        qDebug() << "Cleared selection mask during undo to prevent color inversion";
+    }
+    
     // Remove the last layer
     rightSidebar->removeLayer(layerCount - 1);
     
@@ -1338,6 +1348,97 @@ void MainWindow::applyZoom() {
     }
 }
 
+void MainWindow::showResolutionEnhancementDialog() {
+    if (!checkImageLoaded("enhance resolution")) return;
+    
+    ResolutionEnhancementDialog dialog(currentImage, this);
+    
+    if (dialog.exec() == QDialog::Accepted) {
+        cv::Mat enhancedImage = dialog.getResultImage();
+        
+        if (enhancedImage.empty()) {
+            QMessageBox::warning(this, "Error", "Failed to enhance resolution!");
+            return;
+        }
+        
+        // Apply selection mask if active
+        if (selectionTool->hasMask()) {
+            // For upscaling, we need to upscale the mask too
+            cv::Mat upscaledMask;
+            cv::resize(selectionTool->getMask(cv::Size(currentImage.cols, currentImage.rows)),
+                      upscaledMask,
+                      cv::Size(enhancedImage.cols, enhancedImage.rows),
+                      0, 0, cv::INTER_NEAREST);
+            
+            // Create temporary selection tool with upscaled mask
+            cv::Mat result = currentImage.clone();
+            cv::resize(result, result, cv::Size(enhancedImage.cols, enhancedImage.rows), 
+                      0, 0, cv::INTER_CUBIC);
+            enhancedImage.copyTo(result, upscaledMask);
+            processedImage = result;
+            
+            updateStatus("Resolution enhanced on selected area", "success");
+        } else {
+            processedImage = enhancedImage;
+            updateStatus("Resolution enhanced successfully", "success");
+        }
+        
+        recentlyProcessed = true;
+        updateDisplay();
+        
+        if (!processedImage.empty()) {
+            currentImage = processedImage.clone();
+            
+            double scale = dialog.getScaleFactor();
+            ResolutionEnhancementDialog::InterpolationMethod method = dialog.getMethod();
+            
+            QString methodName;
+            switch (method) {
+                case ResolutionEnhancementDialog::Nearest: methodName = "Nearest"; break;
+                case ResolutionEnhancementDialog::Bilinear: methodName = "Bilinear"; break;
+                case ResolutionEnhancementDialog::Bicubic: methodName = "Bicubic"; break;
+                case ResolutionEnhancementDialog::Lanczos4: methodName = "Lanczos4"; break;
+                case ResolutionEnhancementDialog::EdgeDirected: methodName = "Edge-Directed"; break;
+            }
+            
+            rightSidebar->addLayer(
+                QString("Resolution %1x (%2)").arg(scale, 0, 'f', 2).arg(methodName),
+                "transform",
+                processedImage,
+                [scale, method](const cv::Mat& input) {
+                    cv::Mat result;
+                    cv::Size newSize(
+                        static_cast<int>(input.cols * scale),
+                        static_cast<int>(input.rows * scale)
+                    );
+                    
+                    switch (method) {
+                        case ResolutionEnhancementDialog::Nearest:
+                            cv::resize(input, result, newSize, 0, 0, cv::INTER_NEAREST);
+                            break;
+                        case ResolutionEnhancementDialog::Bilinear:
+                            cv::resize(input, result, newSize, 0, 0, cv::INTER_LINEAR);
+                            break;
+                        case ResolutionEnhancementDialog::Bicubic:
+                            cv::resize(input, result, newSize, 0, 0, cv::INTER_CUBIC);
+                            break;
+                        case ResolutionEnhancementDialog::Lanczos4:
+                            cv::resize(input, result, newSize, 0, 0, cv::INTER_LANCZOS4);
+                            break;
+                        case ResolutionEnhancementDialog::EdgeDirected:
+                            cv::resize(input, result, newSize, 0, 0, cv::INTER_LANCZOS4);
+                            break;
+                    }
+                    return result;
+                }
+            );
+            
+            rightSidebar->updateHistogram(processedImage);
+            updateUndoButtonState();
+        }
+    }
+}
+
 void MainWindow::applyFlipX() {
     if (!checkImageLoaded("apply flip horizontal")) return;
     
@@ -1554,17 +1655,71 @@ void MainWindow::applyBinaryThreshold() {
 }
 
 void MainWindow::applyGaussianBlur() {
-    applySimpleFilter(
-        [](const cv::Mat& src, cv::Mat& dst) {
-            ImageProcessor::applyGaussianBlur(src, dst);
-        },
-        [](const cv::Mat& input) {
-            cv::Mat result;
-            ImageProcessor::applyGaussianBlur(input, result);
-            return result;
-        },
-        "Gaussian Blur", "filter", "Gaussian blur applied!"
-    );
+    if (!checkImageLoaded("apply blur")) return;
+    
+    // Open blur dialog with sliders
+    BlurDialog dialog(currentImage, this);
+    
+    if (dialog.exec() == QDialog::Accepted) {
+        cv::Mat blurredImage = dialog.getResultImage();
+        
+        if (blurredImage.empty()) {
+            QMessageBox::warning(this, "Error", "Failed to apply blur!");
+            return;
+        }
+        
+        // Apply selection mask if active
+        if (selectionTool->hasMask()) {
+            processedImage = selectionTool->applyMaskToResult(currentImage, blurredImage);
+            updateStatus("Blur applied to selected area", "success");
+        } else {
+            processedImage = blurredImage;
+            updateStatus("Blur applied", "success");
+        }
+        
+        recentlyProcessed = true;
+        updateDisplay();
+        
+        if (!processedImage.empty()) {
+            currentImage = processedImage.clone();
+            
+            // Get blur type name for layer
+            QString blurTypeName;
+            int kernelSize = dialog.getKernelSize();
+            switch (dialog.getBlurType()) {
+                case BlurDialog::Gaussian:
+                    blurTypeName = QString("Gaussian Blur (k=%1)").arg(kernelSize);
+                    break;
+                case BlurDialog::Median:
+                    blurTypeName = QString("Median Filter (k=%1)").arg(kernelSize);
+                    break;
+                case BlurDialog::Bilateral:
+                    blurTypeName = QString("Bilateral Filter (k=%1)").arg(kernelSize);
+                    break;
+            }
+            
+            rightSidebar->addLayer(blurTypeName, "filter", processedImage, 
+                [kernelSize, blurType = dialog.getBlurType()](const cv::Mat& input) {
+                    cv::Mat result;
+                    int kSize = (kernelSize % 2 == 0) ? kernelSize + 1 : kernelSize;
+                    switch (blurType) {
+                        case BlurDialog::Gaussian:
+                            cv::GaussianBlur(input, result, cv::Size(kSize, kSize), 0);
+                            break;
+                        case BlurDialog::Median:
+                            cv::medianBlur(input, result, kSize);
+                            break;
+                        case BlurDialog::Bilateral:
+                            cv::bilateralFilter(input, result, kSize, 75, 75);
+                            break;
+                    }
+                    return result;
+                });
+            
+            rightSidebar->updateHistogram(processedImage);
+            updateUndoButtonState();
+        }
+    }
 }
 
 void MainWindow::applyEdgeDetection() {
